@@ -1,3 +1,10 @@
-idf_component_register(SRCS "main.c" "network.c" "app.c"
-                    INCLUDE_DIRS ""
+idf_component_register(SRCS "main.c"
+							"network.c"
+							"app.c"
+							"tasks/taskSmogSensor.c"
+							"tasks/taskPushReports.c"
+							"tasks/taskAggregateData.c"
+							"smog.c"
+							"crypto.c"
+                    INCLUDE_DIRS "."
                     )

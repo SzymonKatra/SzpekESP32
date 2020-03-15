@@ -22,26 +22,6 @@
 #include "network.h"
 #include "logUtils.h"
 
-/*
-int readFromUart(uint8_t* buffer, size_t len)
-{
-	return uart_read_bytes(UART_NUM_2, buffer, len, 2000 / portTICK_PERIOD_MS);
-}
-
-void smogSensorTask()
-{
-	pmsParams_t params;
-	params.model = PMS_7003;
-	params.dataReadFun = &readFromUart;
-
-	while (1)
-	{
-		pmsData_t result;
-		pmsError_t errcode = pmsRead(&params, &result);
-		printf("%d, PM1: %d, PM2.5: %d, PM10: %d\n", errcode, result.pm1Outdoor, result.pm2_5Outdoor, result.pm10Outdoor);
-	}
-}
-*/
 static void initPeripherals();
 static void initNVS();
 
@@ -77,7 +57,7 @@ static void initPeripherals()
 		        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE
 		    };
 
-	uart_param_config(UART_NUM_2, &uartPms3003Config);
-	uart_set_pin(UART_NUM_2, UART_PIN_NO_CHANGE, GPIO_NUM_16, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-	uart_driver_install(UART_NUM_2, 128 * 2, 0, 0, NULL, 0);
+	uart_param_config(APP_PMS_UART_PORT, &uartPms3003Config);
+	uart_set_pin(APP_PMS_UART_PORT, UART_PIN_NO_CHANGE, GPIO_NUM_16, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+	uart_driver_install(APP_PMS_UART_PORT, 128 * 2, 0, 0, NULL, 0);
 }

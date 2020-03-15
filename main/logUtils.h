@@ -8,7 +8,7 @@
 #ifndef MAIN_TASKUTILS_H_
 #define MAIN_TASKUTILS_H_
 
-
+#include <stdlib.h> /* for abort() */
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <esp_log.h>
@@ -24,5 +24,17 @@
 #define LOG_INFO(format, ... ) ESP_LOGI(LOG_TAG, format, ##__VA_ARGS__)
 #define LOG_DEBUG(format, ... ) ESP_LOGD(LOG_TAG, format, ##__VA_ARGS__)
 #define LOG_VERBOSE(format, ... ) ESP_LOGV(LOG_TAG, format, ##__VA_ARGS__)
+
+#define FREERTOS_ERROR_CHECK(x)  do {                                   \
+        BaseType_t __err_rc = (x);                                      \
+        if (__err_rc != pdPASS) {                                       \
+            ESP_LOGE("FreeRTOS", "Error code %d returned from %s on line %d in %s",		\
+									__err_rc,							\
+									#x,									\
+									__LINE__,							\
+									__FILE__);							\
+			abort();													\
+        }                                                               \
+    } while(0)
 
 #endif /* MAIN_TASKUTILS_H_ */

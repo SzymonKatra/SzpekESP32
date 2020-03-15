@@ -15,10 +15,10 @@ ESP_EVENT_DEFINE_BASE(NETWORK_EVENT);
 
 static const char* LOG_TAG = "Network";
 
-#define WIFI_SSID_MAX_LENGTH 31
-#define WIFI_PASSWORD_MAX_LENGTH 63
+static const size_t WIFI_SSID_MAX_LENGTH = 31;
+static const size_t WIFI_PASSWORD_MAX_LENGTH = 63;
 
-#define NETWORK_ESTABLISHED_BIT	BIT0
+static const EventBits_t NETWORK_ESTABLISHED_BIT = BIT0;
 static EventGroupHandle_t s_eventGroup;
 
 static void eventHandler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);

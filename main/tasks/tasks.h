@@ -8,4 +8,10 @@
 #ifndef MAIN_TASKS_TASKS_H_
 #define MAIN_TASKS_TASKS_H_
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include "taskSmogSensor.h"
+#include "taskPushReports.h"
+#include "taskAggregateData.h"
+
 #endif /* MAIN_TASKS_TASKS_H_ */

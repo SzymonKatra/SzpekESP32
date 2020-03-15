@@ -1,39 +1,60 @@
 #include "app.h"
 
 #include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <freertos/queue.h>
 #include <freertos/event_groups.h>
 #include <esp_event.h>
 #include <esp_sntp.h>
 #include "network.h"
 #include "logUtils.h"
+#include "tasks/tasks.h"
+#include "reports.h"
+#include "smog.h"
 
 static const char* LOG_TAG = "App";
 
+const uart_port_t APP_PMS_UART_PORT = UART_NUM_2;
+
 static esp_event_loop_handle_t s_appEventLoopHandle;
+
+static appITCStructures_t s_itcStructures;
+static appTasksList_t s_tasks;
 
 static void setupAppEventLoop();
 static void setupTimeSync();
 
-static void createBasicTasks();
-static void createNormalTasks();
+static void createITCStructures();
+static void createTasks();
 
 static void networkEventHandler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
 static void onTimeSynced(struct timeval *tv);
 
 void appInit()
 {
+	vTaskPrioritySet(NULL, 10);
+	assert(uxTaskPriorityGet(NULL) == 10);
+
 	setupAppEventLoop();
 	setupTimeSync();
 
 	networkInit();
 	networkSTAConnection("UPC6133978", "Z8bbzyb6sawm");
 
-	createBasicTasks();
+	smogInit();
+
+	createITCStructures();
+	createTasks();
 }
 
 esp_event_loop_handle_t appGetEventLoopHandle()
 {
 	return s_appEventLoopHandle;
+}
+
+const appITCStructures_t* appGetITCStructures()
+{
+	return &s_itcStructures;
 }
 
 static void setupAppEventLoop()
@@ -58,14 +79,21 @@ static void setupTimeSync()
 	sntp_init();
 }
 
-static void createBasicTasks()
+static void createITCStructures()
 {
-	LOG_INFO("Creating basic tasks...");
+	s_itcStructures.reportsQueue = xQueueCreate(24, sizeof(report_t));
+	configASSERT(s_itcStructures.reportsQueue);
 }
 
-static void createNormalTasks()
+static void createTasks()
 {
-	LOG_INFO("Creating normal tasks...");
+	LOG_INFO("Creating tasks...");
+	FREERTOS_ERROR_CHECK(xTaskCreate(taskSmogSensor, "SmogSensor", 2048, NULL, 7, &s_tasks.smogSensor));
+	FREERTOS_ERROR_CHECK(xTaskCreate(taskAggregateData, "AggregateData", 2048, NULL, 5, &s_tasks.aggregateData));
+	LOG_INFO("main aggreg started");
+	vTaskSuspend(s_tasks.aggregateData);
+	FREERTOS_ERROR_CHECK(xTaskCreate(taskPushReports, "PushReports", 8192, NULL, 1, &s_tasks.pushReports));
+	vTaskSuspend(s_tasks.pushReports);
 }
 
 static void networkEventHandler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
@@ -73,15 +101,17 @@ static void networkEventHandler(void* arg, esp_event_base_t event_base, int32_t 
 	if (event_id == NETWORK_EVENT_CONNECTION_ESTABLISHED)
 	{
 		LOG_INFO("Network connection established");
+		vTaskResume(s_tasks.pushReports);
 	}
 	else if (event_id == NETWORK_EVENT_CONNECTION_LOST)
 	{
 		LOG_INFO("Network connection lost");
+		vTaskSuspend(s_tasks.pushReports);
 	}
 }
 
 static void onTimeSynced(struct timeval *tv)
 {
 	LOG_INFO("Time synchronized: %ld", tv->tv_sec);
-	createNormalTasks();
+	vTaskResume(s_tasks.aggregateData);
 }
