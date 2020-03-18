@@ -20,7 +20,6 @@ static void waitForMinuteChange(time_t beginTimestamp);
 
 void taskAggregateData(void* p)
 {
-	LOG_TASK_INFO("aggreg prol");
 	smogReset();
 
 	while (1)
@@ -30,7 +29,6 @@ void taskAggregateData(void* p)
 
 		smogResult_t smogResult;
 		smogSummaryAndReset(&smogResult);
-
 		time_t end = time(NULL);
 
 		report_t report;
