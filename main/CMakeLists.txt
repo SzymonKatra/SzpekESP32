@@ -6,5 +6,7 @@ idf_component_register(SRCS "main.c"
 							"tasks/taskAggregateData.c"
 							"smog.c"
 							"crypto.c"
+							"settings.c"
+							"szpekApi.c"
                     INCLUDE_DIRS "."
                     )

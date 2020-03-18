@@ -11,6 +11,8 @@
 #include "tasks/tasks.h"
 #include "reports.h"
 #include "smog.h"
+#include "settings.h"
+#include "crypto.h"
 
 static const char* LOG_TAG = "App";
 
@@ -34,6 +36,9 @@ void appInit()
 {
 	vTaskPrioritySet(NULL, 10);
 	assert(uxTaskPriorityGet(NULL) == 10);
+
+	settingsInit();
+	cryptoInit(settingsGetSensorBase64Secret());
 
 	setupAppEventLoop();
 	setupTimeSync();
@@ -81,19 +86,25 @@ static void setupTimeSync()
 
 static void createITCStructures()
 {
+	LOG_INFO("Creating ITC structures...");
+
 	s_itcStructures.reportsQueue = xQueueCreate(24, sizeof(report_t));
 	configASSERT(s_itcStructures.reportsQueue);
+
+	LOG_INFO("ITC structures created successfully!");
 }
 
 static void createTasks()
 {
 	LOG_INFO("Creating tasks...");
+
 	FREERTOS_ERROR_CHECK(xTaskCreate(taskSmogSensor, "SmogSensor", 2048, NULL, 7, &s_tasks.smogSensor));
 	FREERTOS_ERROR_CHECK(xTaskCreate(taskAggregateData, "AggregateData", 2048, NULL, 5, &s_tasks.aggregateData));
-	LOG_INFO("main aggreg started");
 	vTaskSuspend(s_tasks.aggregateData);
 	FREERTOS_ERROR_CHECK(xTaskCreate(taskPushReports, "PushReports", 8192, NULL, 1, &s_tasks.pushReports));
 	vTaskSuspend(s_tasks.pushReports);
+
+	LOG_INFO("Tasks created successfully!");
 }
 
 static void networkEventHandler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
