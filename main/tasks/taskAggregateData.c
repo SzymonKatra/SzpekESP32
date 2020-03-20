@@ -20,6 +20,8 @@ static void waitForMinuteChange(time_t beginTimestamp);
 
 void taskAggregateData(void* p)
 {
+	QueueHandle_t reportsQueue = appGetITCStructures()->reportsQueue;
+
 	smogReset();
 
 	while (1)
@@ -39,8 +41,13 @@ void taskAggregateData(void* p)
 		report.timestampFrom = begin;
 		report.timestampTo = end;
 
-		FREERTOS_ERROR_CHECK(xQueueSend(appGetITCStructures()->reportsQueue, &report, pdMS_TO_TICKS(1000)));
-		LOG_TASK_INFO("Report queued");
+		if (uxQueueSpacesAvailable(reportsQueue) == 0)
+		{
+			report_t trash;
+			FREERTOS_ERROR_CHECK(xQueueReceive(reportsQueue, &trash, 0));
+		}
+
+		FREERTOS_ERROR_CHECK(xQueueSend(reportsQueue, &report, 0));
 	}
 }
 

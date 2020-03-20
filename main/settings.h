@@ -10,9 +10,14 @@
 
 #include <stddef.h>
 
+typedef struct
+{
+	char code[32];
+	char secretBase64[45];
+} settingsSzpekId_t;
+
 void settingsInit();
 
-const char* settingsGetSensorCode();
-const char* settingsGetSensorBase64Secret();
+const settingsSzpekId_t* settingsGetSzpekId();
 
 #endif /* MAIN_SETTINGS_H_ */

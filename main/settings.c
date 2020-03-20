@@ -14,8 +14,7 @@
 
 static const char* LOG_TAG = "Settings";
 
-static char s_sensorCode[32];
-static char s_sensorBase64Secret[45];
+static settingsSzpekId_t s_szpekId;
 
 static void loadSzpekId();
 
@@ -24,14 +23,9 @@ void settingsInit()
 	loadSzpekId();
 }
 
-const char* settingsGetSensorCode()
+const settingsSzpekId_t* settingsGetSzpekId()
 {
-	return s_sensorCode;
-}
-
-const char* settingsGetSensorBase64Secret()
-{
-	return s_sensorBase64Secret;
+	return &s_szpekId;
 }
 
 static void loadSzpekId()
@@ -49,13 +43,13 @@ static void loadSzpekId()
 
 	cJSON* szpekid = cJSON_Parse(buffer);
 	cJSON* szpek_code = cJSON_GetObjectItemCaseSensitive(szpekid, "code");
-	strcpy(s_sensorCode, szpek_code->valuestring);
+	strcpy(s_szpekId.code, szpek_code->valuestring);
 	cJSON* szpek_secret = cJSON_GetObjectItemCaseSensitive(szpekid, "secret");
-	strcpy(s_sensorBase64Secret, szpek_secret->valuestring);
+	strcpy(s_szpekId.secretBase64, szpek_secret->valuestring);
 	cJSON_Delete(szpekid);
 
-	LOG_INFO("SzpekID Code = %s", s_sensorCode);
-	LOG_INFO("SzpekID Secret = %s", s_sensorBase64Secret);
+	LOG_INFO("SzpekID Code = %s", s_szpekId.code);
+	LOG_INFO("SzpekID Secret = %s", s_szpekId.secretBase64);
 
 	free(buffer);
 

@@ -22,7 +22,9 @@ static const char* LOG_TAG = "SzpekApi";
 static void szpekApiJSONPack(const char* data, size_t length, char* result);
 static void cJSONHelper_AddDateTimeToObject(cJSON* const object, const char* const name, const time_t timestamp);
 
-bool szpekApiSensorsMicro(const szpekApiSensorsMicroData_t* data)
+static int performSignedPOST(const char* url, const char* jsonData);
+
+bool szpekApiSensorsMicro(const szpekApiSensorsMicroContract_t* data)
 {
 	cJSON* root = cJSON_CreateObject();
 	cJSON_AddNumberToObject(root, "pm1Value", data->pm1Value);
@@ -35,28 +37,10 @@ bool szpekApiSensorsMicro(const szpekApiSensorsMicroData_t* data)
 	char* jsonStr = cJSON_PrintBuffered(root, 512, false);
 	cJSON_Delete(root);
 
-	char* jsonPack = malloc(1024);
-	szpekApiJSONPack(jsonStr, strlen(jsonStr), jsonPack);
+	int status = performSignedPOST(SZPEKAPI_BASE_URL"/SensorsMicro", jsonStr);
 	free(jsonStr);
-	jsonStr = NULL;
 
-	esp_http_client_config_t config = {
-			.url = SZPEKAPI_BASE_URL"/SensorsMicro"
-		};
-	esp_http_client_handle_t client = esp_http_client_init(&config);
-	esp_http_client_set_header(client, "Content-Type", "application/json");
-	esp_http_client_set_method(client, HTTP_METHOD_POST);
-	esp_http_client_set_post_field(client, jsonPack, strlen(jsonPack));
-
-	esp_err_t err = esp_http_client_perform(client);
-	LOG_INFO("perform = %d", err);
-	LOG_INFO("response code = %d", esp_http_client_get_status_code(client));
-	bool success = err == ESP_OK && esp_http_client_get_status_code(client) == 200;
-
-	esp_http_client_cleanup(client);
-	free(jsonPack);
-
-	return success;
+	return status == 200;
 }
 
 static void cJSONHelper_AddDateTimeToObject(cJSON* const object, const char* const name, const time_t timestamp)
@@ -83,4 +67,35 @@ static void szpekApiJSONPack(const char* data, size_t length, char* result)
     sprintf(result, "{ \"payload\": \"%s\", \"signature\": \"%s\" }", base64Data, base64Signature);
 
     free(base64Data);
+}
+
+static int performSignedPOST(const char* url, const char* jsonData)
+{
+	size_t len = strlen(jsonData);
+	char* jsonPack = malloc(CRYPTO_BASE64_BUFFER_LEN(len) + 128);
+	szpekApiJSONPack(jsonData, strlen(jsonData), jsonPack);
+
+	esp_http_client_config_t config = { .url = url, .method = HTTP_METHOD_POST };
+	esp_http_client_handle_t client = esp_http_client_init(&config);
+	esp_http_client_set_header(client, "Content-Type", "application/json");
+	esp_http_client_set_post_field(client, jsonPack, strlen(jsonPack));
+
+	LOG_INFO("Performing HTTP POST to %s ...", config.url);
+	esp_err_t err = esp_http_client_perform(client);
+	int status;
+	if (err == ESP_OK)
+	{
+		status = esp_http_client_get_status_code(client);
+		LOG_INFO("Successful HTTP POST to %s, status = %d", config.url, status);
+	}
+	else
+	{
+		LOG_ERROR("Failed HTTP POST to %s failed: %s", config.url, esp_err_to_name(err));
+		status = -1;
+	}
+
+	esp_http_client_cleanup(client);
+	free(jsonPack);
+
+	return status;
 }

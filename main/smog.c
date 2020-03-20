@@ -33,6 +33,7 @@ void smogAccumulate(uint16_t pm1, uint16_t pm2_5, uint16_t pm10)
 	s_accumulatedPm1 += pm1;
 	s_accumulatedPm2_5 += pm2_5;
 	s_accumulatedPm10 += pm10;
+	s_samplesCount++;
 
 	xSemaphoreGive(s_mutex);
 }

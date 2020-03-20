@@ -24,7 +24,7 @@ void taskSmogSensor(void* p)
 		pmsData_t result;
 		pmsError_t errcode = pmsRead(&params, &result);
 		smogAccumulate(result.pm1Outdoor, result.pm2_5Outdoor, result.pm10Outdoor);
-		LOG_TASK_INFO("%d, PM1: %d, PM2.5: %d, PM10: %d", errcode, result.pm1Outdoor, result.pm2_5Outdoor, result.pm10Outdoor);
+		//LOG_TASK_INFO("%d, PM1: %d, PM2.5: %d, PM10: %d", errcode, result.pm1Outdoor, result.pm2_5Outdoor, result.pm10Outdoor);
 	}
 }
 

@@ -12,7 +12,15 @@
 #include <freertos/task.h>
 #include <freertos/queue.h>
 #include <driver/uart.h>
+#include <driver/gpio.h>
 #include <esp_event.h>
+
+typedef enum
+{
+	APP_MODE_NONE,
+	APP_MODE_RUNNING,
+	APP_MODE_CONFIG
+} appMode_t;
 
 typedef struct
 {
@@ -27,8 +35,14 @@ typedef struct
 } appITCStructures_t;
 
 extern const uart_port_t APP_PMS_UART_PORT;
+extern const gpio_num_t APP_NETWORK_LED_GPIO;
+extern const gpio_num_t APP_CONFIG_LED_GPIO;
+extern const gpio_num_t APP_CONFIG_BUTTON_GPIO;
 
 void appInit();
+
+appMode_t appGetCurrentMode();
+void appChangeMode(appMode_t appMode);
 
 esp_event_loop_handle_t appGetEventLoopHandle();
 const appITCStructures_t* appGetITCStructures();

@@ -12,8 +12,7 @@
 #include "esp_system.h"
 #include "esp_spi_flash.h"
 #include <driver/uart.h>
-#include "driver/gpio.h"
-#include "pms_driver.h"
+#include <driver/gpio.h>
 #include <esp_log.h>
 #include <esp_event.h>
 #include <nvs_flash.h>
@@ -49,15 +48,36 @@ static void initNVS()
 
 static void initPeripherals()
 {
-	uart_config_t uartPms3003Config = {
-		        .baud_rate = 9600,
-		        .data_bits = UART_DATA_8_BITS,
-		        .parity = UART_PARITY_DISABLE,
-		        .stop_bits = UART_STOP_BITS_1,
-		        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE
-		    };
+	uart_config_t uartPmsConfig =
+	{
+		.baud_rate = 9600,
+		.data_bits = UART_DATA_8_BITS,
+		.parity = UART_PARITY_DISABLE,
+		.stop_bits = UART_STOP_BITS_1,
+		.flow_ctrl = UART_HW_FLOWCTRL_DISABLE
+	};
 
-	uart_param_config(APP_PMS_UART_PORT, &uartPms3003Config);
-	uart_set_pin(APP_PMS_UART_PORT, UART_PIN_NO_CHANGE, GPIO_NUM_16, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+	uart_param_config(APP_PMS_UART_PORT, &uartPmsConfig);
+	uart_set_pin(APP_PMS_UART_PORT, GPIO_NUM_17, GPIO_NUM_16, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
 	uart_driver_install(APP_PMS_UART_PORT, 128 * 2, 0, 0, NULL, 0);
+
+	gpio_config_t ledsConfig =
+	{
+		.pin_bit_mask = (1ULL << APP_NETWORK_LED_GPIO) | (1ULL << APP_CONFIG_LED_GPIO),
+		.mode = GPIO_MODE_OUTPUT,
+		.pull_up_en = GPIO_PULLUP_DISABLE,
+		.pull_down_en = GPIO_PULLDOWN_DISABLE,
+		.intr_type = GPIO_INTR_DISABLE
+	};
+	gpio_config(&ledsConfig);
+
+	gpio_config_t buttonsConfig =
+	{
+		.pin_bit_mask = (1ULL << APP_CONFIG_BUTTON_GPIO),
+		.mode = GPIO_MODE_INPUT,
+		.pull_up_en = GPIO_PULLUP_DISABLE,
+		.pull_down_en = GPIO_PULLDOWN_ENABLE,
+		.intr_type = GPIO_INTR_DISABLE
+	};
+	gpio_config(&buttonsConfig);
 }

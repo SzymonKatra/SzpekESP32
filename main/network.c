@@ -13,10 +13,10 @@
 
 ESP_EVENT_DEFINE_BASE(NETWORK_EVENT);
 
-static const char* LOG_TAG = "Network";
+const size_t NETWORK_SSID_SIZE = 32;
+const size_t NETWORK_PASSWORD_SIZE = 64;
 
-static const size_t WIFI_SSID_MAX_LENGTH = 31;
-static const size_t WIFI_PASSWORD_MAX_LENGTH = 63;
+static const char* LOG_TAG = "Network";
 
 static const EventBits_t NETWORK_ESTABLISHED_BIT = BIT0;
 static EventGroupHandle_t s_eventGroup;
@@ -39,19 +39,8 @@ void networkInit()
     LOG_INFO("Initialization finished");
 }
 
-networkError_t networkSTAConnection(const char* ssid, const char* password)
+networkError_t networkSTAConnection(const char ssid[NETWORK_SSID_SIZE], const char password[NETWORK_PASSWORD_SIZE])
 {
-	if (strlen(ssid) > WIFI_SSID_MAX_LENGTH)
-	{
-		LOG_ERROR("SSID too long, limit is %d: %s", WIFI_SSID_MAX_LENGTH, ssid);
-		return NETWORK_ERR_TOO_LONG_SSID;
-	}
-	if (strlen(password) > WIFI_PASSWORD_MAX_LENGTH)
-	{
-		LOG_ERROR("Password too long, limit is %d: %s", WIFI_PASSWORD_MAX_LENGTH, password);
-		return NETWORK_ERR_TOO_LONG_SSID;
-	}
-
 	wifi_config_t wifiCfg;
 	memset(&wifiCfg, 0, sizeof(wifi_config_t));
 	strcpy((char*)wifiCfg.sta.ssid, ssid);
@@ -62,6 +51,25 @@ networkError_t networkSTAConnection(const char* ssid, const char* password)
 	ESP_ERROR_CHECK(esp_wifi_start());
 
 	return NETWORK_OK;
+}
+
+networkError_t networkHotspot(const char ssid[NETWORK_SSID_SIZE], const char password[NETWORK_PASSWORD_SIZE])
+{
+	wifi_config_t wifiCfg;
+	memset(&wifiCfg, 0, sizeof(wifi_config_t));
+	strcpy((char*)wifiCfg.ap.ssid, ssid);
+	strcpy((char*)wifiCfg.sta.password, password);
+
+	ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
+	ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifiCfg));
+	ESP_ERROR_CHECK(esp_wifi_start());
+
+	return NETWORK_OK;
+}
+
+void networkStop()
+{
+	ESP_ERROR_CHECK(esp_wifi_stop());
 }
 
 void networkWaitForEstablish()
@@ -91,7 +99,7 @@ static void eventHandler(void* arg, esp_event_base_t event_base, int32_t event_i
 
 		case WIFI_EVENT_STA_DISCONNECTED:
 			clearEstablished();
-			LOG_INFO("Disconnected");
+			LOG_INFO("Disconnected from the AP");
 			LOG_INFO("Connecting to the AP...");
 			esp_wifi_connect();
 			break;

@@ -6,6 +6,7 @@
 #include <freertos/event_groups.h>
 #include <esp_event.h>
 #include <esp_sntp.h>
+#include <driver/gpio.h>
 #include "network.h"
 #include "logUtils.h"
 #include "tasks/tasks.h"
@@ -17,11 +18,18 @@
 static const char* LOG_TAG = "App";
 
 const uart_port_t APP_PMS_UART_PORT = UART_NUM_2;
+const gpio_num_t APP_NETWORK_LED_GPIO = GPIO_NUM_32;
+const gpio_num_t APP_CONFIG_LED_GPIO = GPIO_NUM_33;
+const gpio_num_t APP_CONFIG_BUTTON_GPIO = GPIO_NUM_35;
 
 static esp_event_loop_handle_t s_appEventLoopHandle;
 
+static appMode_t s_appMode;
 static appITCStructures_t s_itcStructures;
 static appTasksList_t s_tasks;
+
+#define ledNetwork(value) gpio_set_level(APP_NETWORK_LED_GPIO, value)
+#define ledConfig(value) gpio_set_level(APP_CONFIG_LED_GPIO, value)
 
 static void setupAppEventLoop();
 static void setupTimeSync();
@@ -37,19 +45,45 @@ void appInit()
 	vTaskPrioritySet(NULL, 10);
 	assert(uxTaskPriorityGet(NULL) == 10);
 
-	settingsInit();
-	cryptoInit(settingsGetSensorBase64Secret());
+	ledNetwork(0);
+	ledConfig(0);
 
+	settingsInit();
+	cryptoInit(settingsGetSzpekId()->secretBase64);
 	setupAppEventLoop();
 	setupTimeSync();
-
 	networkInit();
-	networkSTAConnection("UPC6133978", "Z8bbzyb6sawm");
-
 	smogInit();
 
 	createITCStructures();
 	createTasks();
+
+	appChangeMode(APP_MODE_RUNNING);
+}
+
+appMode_t appGetCurrentMode()
+{
+	return s_appMode;
+}
+
+void appChangeMode(appMode_t appMode)
+{
+	if (s_appMode == appMode) return;
+
+	s_appMode = appMode;
+
+	if (appMode == APP_MODE_NONE)
+	{
+		networkStop();
+	}
+	else if (appMode == APP_MODE_RUNNING)
+	{
+		networkSTAConnection("UPC6133978", "Z8bbzyb6sawm"); // todo: from config
+	}
+	else if (appMode == APP_MODE_CONFIG)
+	{
+		networkHotspot("szpek", "szpek"); // todo: from config
+	}
 }
 
 esp_event_loop_handle_t appGetEventLoopHandle()
@@ -113,11 +147,23 @@ static void networkEventHandler(void* arg, esp_event_base_t event_base, int32_t 
 	{
 		LOG_INFO("Network connection established");
 		vTaskResume(s_tasks.pushReports);
+		ledNetwork(1);
 	}
 	else if (event_id == NETWORK_EVENT_CONNECTION_LOST)
 	{
 		LOG_INFO("Network connection lost");
 		vTaskSuspend(s_tasks.pushReports);
+		ledNetwork(0);
+	}
+	else if (event_id == NETWORK_EVENT_HOTSPOT_STARTED)
+	{
+		LOG_INFO("Hotspot started");
+		ledConfig(1);
+	}
+	else if (event_id == NETWORK_EVENT_HOTSPOT_STOPPED)
+	{
+		LOG_INFO("Hotspot stopped");
+		ledConfig(0);
 	}
 }
 

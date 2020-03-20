@@ -21,8 +21,8 @@ typedef struct
 	time_t periodFrom;
 	time_t periodTo;
 	const char* sensorCode;
-} szpekApiSensorsMicroData_t;
+} szpekApiSensorsMicroContract_t;
 
-bool szpekApiSensorsMicro(const szpekApiSensorsMicroData_t* data);
+bool szpekApiSensorsMicro(const szpekApiSensorsMicroContract_t* data);
 
 #endif /* MAIN_SZPEKAPI_H_ */

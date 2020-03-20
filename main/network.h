@@ -11,11 +11,12 @@
 #include <stdbool.h>
 #include <esp_event.h>
 
+extern const size_t NETWORK_SSID_SIZE;
+extern const size_t NETWORK_PASSWORD_SIZE;
+
 typedef enum
 {
-	NETWORK_OK,
-	NETWORK_ERR_TOO_LONG_SSID,
-	NETWORK_ERR_TOO_LONG_PASSWORD
+	NETWORK_OK
 } networkError_t;
 
 ESP_EVENT_DECLARE_BASE(NETWORK_EVENT);
@@ -23,11 +24,15 @@ ESP_EVENT_DECLARE_BASE(NETWORK_EVENT);
 typedef enum
 {
 	NETWORK_EVENT_CONNECTION_ESTABLISHED,
-	NETWORK_EVENT_CONNECTION_LOST
+	NETWORK_EVENT_CONNECTION_LOST,
+	NETWORK_EVENT_HOTSPOT_STARTED,
+	NETWORK_EVENT_HOTSPOT_STOPPED
 } networkEvent_t;
 
 void networkInit();
-networkError_t networkSTAConnection(const char* ssid, const char* password);
+networkError_t networkSTAConnection(const char ssid[NETWORK_SSID_SIZE], const char password[NETWORK_PASSWORD_SIZE]);
+networkError_t networkHotspot(const char ssid[NETWORK_SSID_SIZE], const char password[NETWORK_PASSWORD_SIZE]);
+void networkStop();
 void networkWaitForEstablish();
 bool networkIsEstablished();
 
