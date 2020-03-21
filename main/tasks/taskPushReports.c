@@ -15,6 +15,7 @@
 #include "settings.h"
 #include "logUtils.h"
 #include "reports.h"
+#include "network.h"
 
 static void toContract(const report_t* report, szpekApiSensorsMicroContract_t* contract);
 
@@ -35,7 +36,6 @@ void taskPushReports(void* p)
 		{
 			FREERTOS_ERROR_CHECK(xQueueReceive(reportsQueue, &report, 0));
 			LOG_TASK_INFO("Report pushed successfully (%ld - %ld)!", contract.periodFrom, contract.periodTo);
-			appChangeMode(APP_MODE_CONFIG);
 		}
 		else
 		{

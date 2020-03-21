@@ -11,8 +11,8 @@
 #include <stdbool.h>
 #include <esp_event.h>
 
-extern const size_t NETWORK_SSID_SIZE;
-extern const size_t NETWORK_PASSWORD_SIZE;
+#define NETWORK_SSID_SIZE 32
+#define NETWORK_PASSWORD_SIZE 64
 
 typedef enum
 {

@@ -17,7 +17,7 @@
 
 typedef enum
 {
-	APP_MODE_NONE,
+	APP_MODE_IDLE,
 	APP_MODE_RUNNING,
 	APP_MODE_CONFIG
 } appMode_t;
@@ -27,6 +27,7 @@ typedef struct
 	TaskHandle_t smogSensor;
 	TaskHandle_t aggregateData;
 	TaskHandle_t pushReports;
+	TaskHandle_t checkButton;
 } appTasksList_t;
 
 typedef struct

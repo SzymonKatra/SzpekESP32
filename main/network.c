@@ -13,11 +13,16 @@
 
 ESP_EVENT_DEFINE_BASE(NETWORK_EVENT);
 
-const size_t NETWORK_SSID_SIZE = 32;
-const size_t NETWORK_PASSWORD_SIZE = 64;
+typedef enum
+{
+	NETWORK_MODE_NONE,
+	NETWORK_MODE_STA_CONNECTION,
+	NETWORK_MODE_HOTSPOT
+} networkMode_t;
 
 static const char* LOG_TAG = "Network";
 
+static networkMode_t s_currentMode;
 static const EventBits_t NETWORK_ESTABLISHED_BIT = BIT0;
 static EventGroupHandle_t s_eventGroup;
 
@@ -27,6 +32,8 @@ static void clearEstablished();
 
 void networkInit()
 {
+	s_currentMode = NETWORK_MODE_NONE;
+
     s_eventGroup = xEventGroupCreate();
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
@@ -41,6 +48,10 @@ void networkInit()
 
 networkError_t networkSTAConnection(const char ssid[NETWORK_SSID_SIZE], const char password[NETWORK_PASSWORD_SIZE])
 {
+	s_currentMode = NETWORK_MODE_STA_CONNECTION;
+
+	ESP_ERROR_CHECK(esp_wifi_stop());
+
 	wifi_config_t wifiCfg;
 	memset(&wifiCfg, 0, sizeof(wifi_config_t));
 	strcpy((char*)wifiCfg.sta.ssid, ssid);
@@ -55,10 +66,16 @@ networkError_t networkSTAConnection(const char ssid[NETWORK_SSID_SIZE], const ch
 
 networkError_t networkHotspot(const char ssid[NETWORK_SSID_SIZE], const char password[NETWORK_PASSWORD_SIZE])
 {
+	s_currentMode = NETWORK_MODE_HOTSPOT;
+
+	ESP_ERROR_CHECK(esp_wifi_stop());
+
 	wifi_config_t wifiCfg;
 	memset(&wifiCfg, 0, sizeof(wifi_config_t));
 	strcpy((char*)wifiCfg.ap.ssid, ssid);
-	strcpy((char*)wifiCfg.sta.password, password);
+	strcpy((char*)wifiCfg.ap.password, password);
+	wifiCfg.ap.authmode = WIFI_AUTH_WPA_WPA2_PSK;
+	wifiCfg.ap.max_connection = 4;
 
 	ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
 	ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifiCfg));
@@ -69,6 +86,7 @@ networkError_t networkHotspot(const char ssid[NETWORK_SSID_SIZE], const char pas
 
 void networkStop()
 {
+	s_currentMode = NETWORK_MODE_NONE;
 	ESP_ERROR_CHECK(esp_wifi_stop());
 }
 
@@ -89,8 +107,13 @@ static void eventHandler(void* arg, esp_event_base_t event_base, int32_t event_i
 		switch (event_id)
 		{
 		case WIFI_EVENT_STA_START:
-			LOG_INFO("Connecting to the AP...");
+			LOG_INFO("STA started. Connecting to the AP...");
 			esp_wifi_connect();
+			break;
+
+		case WIFI_EVENT_STA_STOP:
+			 // todo: why raised when stopping AP?
+			LOG_INFO("STA stopped");
 			break;
 
 		case WIFI_EVENT_STA_CONNECTED:
@@ -98,10 +121,31 @@ static void eventHandler(void* arg, esp_event_base_t event_base, int32_t event_i
 			break;
 
 		case WIFI_EVENT_STA_DISCONNECTED:
-			clearEstablished();
 			LOG_INFO("Disconnected from the AP");
-			LOG_INFO("Connecting to the AP...");
-			esp_wifi_connect();
+			clearEstablished();
+			if (s_currentMode == NETWORK_MODE_STA_CONNECTION)
+			{
+				LOG_INFO("Connecting to the AP...");
+				esp_wifi_connect();
+			}
+			break;
+
+		case WIFI_EVENT_AP_START:
+			LOG_INFO("AP started");
+			esp_event_post_to(appGetEventLoopHandle(), NETWORK_EVENT, NETWORK_EVENT_HOTSPOT_STARTED, NULL, 0, pdMS_TO_TICKS(1000));
+			break;
+
+		case WIFI_EVENT_AP_STOP:
+			LOG_INFO("AP stopped");
+			esp_event_post_to(appGetEventLoopHandle(), NETWORK_EVENT, NETWORK_EVENT_HOTSPOT_STOPPED, NULL, 0, pdMS_TO_TICKS(1000));
+			break;
+
+		case WIFI_EVENT_AP_STACONNECTED:
+			LOG_INFO("Client connected to the AP");
+			break;
+
+		case WIFI_EVENT_AP_STADISCONNECTED:
+			LOG_INFO("Client disconnected from the AP");
 			break;
 		}
 	}

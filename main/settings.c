@@ -10,22 +10,72 @@
 #include <string.h>
 #include <esp_partition.h>
 #include <cJSON.h>
+#include <nvs.h>
 #include "logUtils.h"
 
 static const char* LOG_TAG = "Settings";
 
 static settingsSzpekId_t s_szpekId;
+static bool s_wifiValid;
+static settingsWifi_t s_wifi;
 
 static void loadSzpekId();
+static void loadWifi(nvs_handle_t nvsHandle);
 
 void settingsInit()
 {
+	s_wifiValid = false;
+
 	loadSzpekId();
+
+	nvs_handle_t nvsHandle;
+	esp_err_t err = nvs_open("settings", NVS_READONLY, &nvsHandle);
+	if (err == ESP_OK)
+	{
+		loadWifi(nvsHandle);
+		nvs_close(nvsHandle);
+	}
+	else
+	{
+		LOG_ERROR("Error (%s) opening NVS handle!", esp_err_to_name(err));
+	}
 }
 
 const settingsSzpekId_t* settingsGetSzpekId()
 {
 	return &s_szpekId;
+}
+
+bool settingsIsWifiValid()
+{
+	return s_wifiValid;
+}
+
+const settingsWifi_t* settingsGetWifi()
+{
+	return &s_wifi;
+}
+
+void settingsSetWifi(const settingsWifi_t* wifiSettings)
+{
+	s_wifi = *wifiSettings;
+	nvs_handle_t nvsHandle;
+	esp_err_t err = nvs_open("settings", NVS_READWRITE, &nvsHandle);
+	if (err == ESP_OK)
+	{
+		nvs_set_str(nvsHandle, "wifi_ssid", s_wifi.ssid);
+		nvs_set_str(nvsHandle, "wifi_password", s_wifi.password);
+		err = nvs_commit(nvsHandle);
+		if (err != ESP_OK)
+		{
+			LOG_ERROR("An error occured while commiting NVS changes (%s)!", esp_err_to_name(err));
+		}
+		nvs_close(nvsHandle);
+	}
+	else
+	{
+		LOG_ERROR("An error occurred while opening NVS handle (%s)!", esp_err_to_name(err));
+	}
 }
 
 static void loadSzpekId()
@@ -54,4 +104,13 @@ static void loadSzpekId()
 	free(buffer);
 
 	LOG_INFO("SzpekID loaded!");
+}
+
+static void loadWifi(nvs_handle_t nvsHandle)
+{
+	size_t len;
+	esp_err_t eWifi = nvs_get_str(nvsHandle, "wifi_ssid", s_wifi.ssid, &len);
+	esp_err_t ePass = nvs_get_str(nvsHandle, "wifi_password", s_wifi.password, &len);
+
+	s_wifiValid = eWifi == ESP_OK && ePass == ESP_OK;
 }

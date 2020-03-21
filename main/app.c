@@ -14,13 +14,14 @@
 #include "smog.h"
 #include "settings.h"
 #include "crypto.h"
+#include "configServer.h"
 
 static const char* LOG_TAG = "App";
 
 const uart_port_t APP_PMS_UART_PORT = UART_NUM_2;
 const gpio_num_t APP_NETWORK_LED_GPIO = GPIO_NUM_32;
 const gpio_num_t APP_CONFIG_LED_GPIO = GPIO_NUM_33;
-const gpio_num_t APP_CONFIG_BUTTON_GPIO = GPIO_NUM_35;
+const gpio_num_t APP_CONFIG_BUTTON_GPIO = GPIO_NUM_25;
 
 static esp_event_loop_handle_t s_appEventLoopHandle;
 
@@ -70,19 +71,29 @@ void appChangeMode(appMode_t appMode)
 {
 	if (s_appMode == appMode) return;
 
+	const char* modeStr = "";
+	switch (appMode)
+	{
+	case APP_MODE_IDLE: modeStr = "idle"; break;
+	case APP_MODE_RUNNING: modeStr = "running"; break;
+	case APP_MODE_CONFIG: modeStr = "config"; break;
+	}
+	LOG_INFO("Changing app mode to %s ...", modeStr);
+
 	s_appMode = appMode;
 
-	if (appMode == APP_MODE_NONE)
+	if (appMode == APP_MODE_IDLE)
 	{
 		networkStop();
 	}
 	else if (appMode == APP_MODE_RUNNING)
 	{
-		networkSTAConnection("UPC6133978", "Z8bbzyb6sawm"); // todo: from config
+		const settingsWifi_t* wifi = settingsGetWifi();
+		networkSTAConnection(wifi->ssid, wifi->password);
 	}
 	else if (appMode == APP_MODE_CONFIG)
 	{
-		networkHotspot("szpek", "szpek"); // todo: from config
+		networkHotspot("szpek", "szpekszpek"); // todo: from config
 	}
 }
 
@@ -132,6 +143,7 @@ static void createTasks()
 {
 	LOG_INFO("Creating tasks...");
 
+	FREERTOS_ERROR_CHECK(xTaskCreate(taskCheckButton, "CheckButton", 2048, NULL, 6, &s_tasks.checkButton));
 	FREERTOS_ERROR_CHECK(xTaskCreate(taskSmogSensor, "SmogSensor", 2048, NULL, 7, &s_tasks.smogSensor));
 	FREERTOS_ERROR_CHECK(xTaskCreate(taskAggregateData, "AggregateData", 2048, NULL, 5, &s_tasks.aggregateData));
 	vTaskSuspend(s_tasks.aggregateData);
@@ -158,11 +170,13 @@ static void networkEventHandler(void* arg, esp_event_base_t event_base, int32_t 
 	else if (event_id == NETWORK_EVENT_HOTSPOT_STARTED)
 	{
 		LOG_INFO("Hotspot started");
+		configServerStart();
 		ledConfig(1);
 	}
 	else if (event_id == NETWORK_EVENT_HOTSPOT_STOPPED)
 	{
 		LOG_INFO("Hotspot stopped");
+		configServerStop();
 		ledConfig(0);
 	}
 }
