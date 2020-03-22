@@ -12,14 +12,28 @@
 
 #include <freertos/FreeRTOS.h>
 #include <driver/gpio.h>
+#include <driver/touch_pad.h>
 #include "app.h"
 #include "logUtils.h"
 
 void taskCheckButton(void* p)
 {
+	//touch_pad_init();
+	//touch_pad_set_voltage(TOUCH_HVOLT_2V4, TOUCH_LVOLT_0V8, TOUCH_HVOLT_ATTEN_1V5);
+	//for (int i = 0;i< TOUCH_PAD_MAX;i++)
+	//{
+	//    touch_pad_config(i, 0);
+	//}
+	//touch_pad_filter_start(10);
+
 	// todo: maybe use interrupts?
 	while (1)
 	{
+		//uint16_t val, rawVal;
+		//touch_pad_read_filtered(TOUCH_PAD_NUM7, &val);
+		//touch_pad_read_raw_data(TOUCH_PAD_NUM7, &rawVal);
+		//LOG_TASK_INFO("Touch 7 = %d, raw = %d", val, rawVal);
+
 		// todo: led blink
 		if (!gpio_get_level(APP_CONFIG_BUTTON_GPIO))
 		{

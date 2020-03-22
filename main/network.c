@@ -48,6 +48,8 @@ void networkInit()
 
 networkError_t networkSTAConnection(const char ssid[NETWORK_SSID_SIZE], const char password[NETWORK_PASSWORD_SIZE])
 {
+	LOG_INFO("STAConnection SSID=%s, password=%s", ssid, password);
+
 	s_currentMode = NETWORK_MODE_STA_CONNECTION;
 
 	ESP_ERROR_CHECK(esp_wifi_stop());
@@ -66,6 +68,8 @@ networkError_t networkSTAConnection(const char ssid[NETWORK_SSID_SIZE], const ch
 
 networkError_t networkHotspot(const char ssid[NETWORK_SSID_SIZE], const char password[NETWORK_PASSWORD_SIZE])
 {
+	LOG_INFO("Hotspot SSID=%s, password=%s", ssid, password);
+
 	s_currentMode = NETWORK_MODE_HOTSPOT;
 
 	ESP_ERROR_CHECK(esp_wifi_stop());
