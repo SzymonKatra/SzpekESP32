@@ -18,6 +18,7 @@
 #include "network.h"
 
 static void toContract(const report_t* report, szpekApiSensorsMicroContract_t* contract);
+static void trySendUntilSucceeded(const szpekApiSensorsMicroContract_t* contract);
 
 void taskPushReports(void* p)
 {
@@ -26,22 +27,12 @@ void taskPushReports(void* p)
 	while (1)
 	{
 		report_t report;
-		FREERTOS_ERROR_CHECK(xQueuePeek(reportsQueue, &report, portMAX_DELAY));
+		if (xQueueReceive(reportsQueue, &report, portMAX_DELAY) != pdTRUE) continue;
 
 		szpekApiSensorsMicroContract_t contract;
 		toContract(&report, &contract);
 
-		LOG_TASK_INFO("Pushing report... (%ld - %ld)", contract.periodFrom, contract.periodTo);
-		if (szpekApiSensorsMicro(&contract))
-		{
-			FREERTOS_ERROR_CHECK(xQueueReceive(reportsQueue, &report, 0));
-			LOG_TASK_INFO("Report pushed successfully (%ld - %ld)!", contract.periodFrom, contract.periodTo);
-		}
-		else
-		{
-			LOG_TASK_ERROR("An error occurred while pushing report (%ld - %ld)!", contract.periodFrom, contract.periodTo);
-			vTaskDelay(pdMS_TO_TICKS(10000));
-		}
+		trySendUntilSucceeded(&contract);
 	}
 }
 
@@ -54,4 +45,23 @@ static void toContract(const report_t* report, szpekApiSensorsMicroContract_t* c
 	contract->periodFrom = report->timestampFrom;
 	contract->periodTo = report->timestampTo;
 	contract->sensorCode = settingsGetSzpekId()->code; // todo: move to szpekApi
+}
+
+static void trySendUntilSucceeded(const szpekApiSensorsMicroContract_t* contract)
+{
+	bool success = false;
+	while (!success)
+	{
+		LOG_TASK_INFO("Pushing report... (%ld - %ld)", contract->periodFrom, contract->periodTo);
+		success = szpekApiSensorsMicro(contract);
+		if (success)
+		{
+			LOG_TASK_INFO("Report pushed successfully (%ld - %ld)!", contract->periodFrom, contract->periodTo);
+		}
+		else
+		{
+			LOG_TASK_ERROR("An error occurred while pushing report (%ld - %ld)!", contract->periodFrom, contract->periodTo);
+			vTaskDelay(pdMS_TO_TICKS(10000));
+		}
+	}
 }

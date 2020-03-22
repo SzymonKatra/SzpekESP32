@@ -10,28 +10,31 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/queue.h>
+#include <freertos/ringbuf.h>
 #include <time.h>
 #include "smog.h"
 #include "reports.h"
 #include "logUtils.h"
 #include "app.h"
+#include "timeTriggers.h"
 
-static void waitForMinuteChange(time_t beginTimestamp);
+static void minuteElapsedHandler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
 
 void taskAggregateData(void* p)
 {
 	QueueHandle_t reportsQueue = appGetITCStructures()->reportsQueue;
 
 	smogReset();
+	appRegisterEventHandler(TIME_TRIGGERS_EVENT, TIME_TRIGGERS_EVENT_MINUTE_PASSED, minuteElapsedHandler, NULL);
 
+	time_t begin = time(NULL);
 	while (1)
 	{
-		time_t begin = time(NULL);
-		waitForMinuteChange(begin);
+		ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+		time_t end = time(NULL);
 
 		smogResult_t smogResult;
 		smogSummaryAndReset(&smogResult);
-		time_t end = time(NULL);
 
 		report_t report;
 		report.pm1 = smogResult.pm1;
@@ -41,27 +44,20 @@ void taskAggregateData(void* p)
 		report.timestampFrom = begin;
 		report.timestampTo = end;
 
+		// todo: mutex?
 		if (uxQueueSpacesAvailable(reportsQueue) == 0)
 		{
 			report_t trash;
-			FREERTOS_ERROR_CHECK(xQueueReceive(reportsQueue, &trash, 0));
+			xQueueReceive(reportsQueue, &trash, 0);
 		}
 
 		FREERTOS_ERROR_CHECK(xQueueSend(reportsQueue, &report, 0));
+
+		begin = end;
 	}
 }
 
-
-static void waitForMinuteChange(time_t beginTimestamp)
+static void minuteElapsedHandler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
-	struct tm begin = *gmtime(&beginTimestamp);
-
-	time_t currentTimestamp = time(NULL);
-	struct tm current = *gmtime(&currentTimestamp);
-	while (current.tm_min == begin.tm_min)
-	{
-		vTaskDelay(pdMS_TO_TICKS(250));
-		currentTimestamp = time(NULL);
-		current = *gmtime(&currentTimestamp);
-	}
+	xTaskNotifyGive(appGetTasks()->aggregateData);
 }

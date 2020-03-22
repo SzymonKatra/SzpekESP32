@@ -10,11 +10,15 @@
 #include "network.h"
 #include "logUtils.h"
 #include "tasks/tasks.h"
+#include "timers/timers.h"
 #include "reports.h"
 #include "smog.h"
 #include "settings.h"
 #include "crypto.h"
 #include "configServer.h"
+
+#define APP_INIT_PRIORITY (configTIMER_TASK_PRIORITY + 1)
+#define APP_EVENT_LOOP_PRIORITY (configTIMER_TASK_PRIORITY - 1)
 
 static const char* LOG_TAG = "App";
 
@@ -28,14 +32,16 @@ static esp_event_loop_handle_t s_appEventLoopHandle;
 static appMode_t s_appMode;
 static appITCStructures_t s_itcStructures;
 static appTasksList_t s_tasks;
+static appTimersList_t s_timers;
 
 #define ledNetwork(value) gpio_set_level(APP_NETWORK_LED_GPIO, value)
 #define ledConfig(value) gpio_set_level(APP_CONFIG_LED_GPIO, value)
 
-static void setupAppEventLoop();
+static void createAppEventLoop();
 static void setupTimeSync();
 
 static void createITCStructures();
+static void createTimers();
 static void createTasks();
 
 static void networkEventHandler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
@@ -43,20 +49,24 @@ static void onTimeSynced(struct timeval *tv);
 
 void appInit()
 {
-	vTaskPrioritySet(NULL, 10);
-	assert(uxTaskPriorityGet(NULL) == 10);
+	vTaskPrioritySet(NULL, APP_INIT_PRIORITY);
+	configASSERT(uxTaskPriorityGet(NULL) == APP_INIT_PRIORITY);
 
 	ledNetwork(0);
 	ledConfig(0);
 
+	createAppEventLoop();
+
+	appRegisterEventHandler(NETWORK_EVENT, ESP_EVENT_ANY_ID, networkEventHandler, NULL);
+
 	settingsInit();
 	cryptoInit(settingsGetSzpekId()->secretBase64);
-	setupAppEventLoop();
 	setupTimeSync();
 	networkInit();
 	smogInit();
 
 	createITCStructures();
+	createTimers();
 	createTasks();
 
 	appChangeMode(APP_MODE_RUNNING);
@@ -107,18 +117,27 @@ const appITCStructures_t* appGetITCStructures()
 	return &s_itcStructures;
 }
 
-static void setupAppEventLoop()
+const appTasksList_t* appGetTasks()
+{
+	return &s_tasks;
+}
+
+void appRegisterEventHandler(esp_event_base_t event_base, int32_t event_id, esp_event_handler_t event_handler, void* event_handler_arg)
+{
+	ESP_ERROR_CHECK(esp_event_handler_register_with(s_appEventLoopHandle, event_base, event_id, event_handler, event_handler_arg));
+}
+
+static void createAppEventLoop()
 {
 	esp_event_loop_args_t appEventLoopArgs = {
 		.queue_size = 10,
 		.task_name = "AppEventLoop",
-		.task_priority = 2,
+		.task_priority = APP_EVENT_LOOP_PRIORITY,
 		.task_stack_size = 2048,
 		.task_core_id = tskNO_AFFINITY
 	};
 
 	ESP_ERROR_CHECK(esp_event_loop_create(&appEventLoopArgs, &s_appEventLoopHandle));
-	ESP_ERROR_CHECK(esp_event_handler_register_with(s_appEventLoopHandle, NETWORK_EVENT, ESP_EVENT_ANY_ID, networkEventHandler, NULL));
 }
 
 static void setupTimeSync()
@@ -137,6 +156,16 @@ static void createITCStructures()
 	configASSERT(s_itcStructures.reportsQueue);
 
 	LOG_INFO("ITC structures created successfully!");
+}
+
+static void createTimers()
+{
+	LOG_INFO("Creating software timers...");
+
+	s_timers.timeEvents = xTimerCreate("TimeEvents", pdMS_TO_TICKS(100), pdTRUE, 0, timerTimeTriggersCallback);
+	configASSERT(s_timers.timeEvents);
+
+	LOG_INFO("Software timers created successfully!");
 }
 
 static void createTasks()
@@ -185,4 +214,9 @@ static void onTimeSynced(struct timeval *tv)
 {
 	LOG_INFO("Time synchronized: %ld", tv->tv_sec);
 	vTaskResume(s_tasks.aggregateData);
+	if (xTimerIsTimerActive(s_timers.timeEvents) == pdFALSE)
+	{
+		timerTimeTriggersInit();
+		xTimerStart(s_timers.timeEvents, 0);
+	}
 }
