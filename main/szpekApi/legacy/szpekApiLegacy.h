@@ -5,8 +5,8 @@
  *      Author: szymo
  */
 
-#ifndef MAIN_SZPEKAPI_H_
-#define MAIN_SZPEKAPI_H_
+#ifndef MAIN_SZPEKAPILEGACY_H_
+#define MAIN_SZPEKAPILEGACY_H_
 
 #include <time.h>
 #include <stdint.h>
@@ -21,8 +21,8 @@ typedef struct
 	time_t periodFrom;
 	time_t periodTo;
 	const char* sensorCode;
-} szpekApiSensorsMicroContract_t;
+} szpekApiLegacySensorsMicroContract_t;
 
-bool szpekApiSensorsMicro(const szpekApiSensorsMicroContract_t* data);
+bool szpekApiLegacySensorsMicro(const szpekApiLegacySensorsMicroContract_t* data);
 
 #endif /* MAIN_SZPEKAPI_H_ */

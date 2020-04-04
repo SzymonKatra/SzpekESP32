@@ -63,7 +63,7 @@ static void initPeripherals()
 
 	gpio_config_t ledsConfig =
 	{
-		.pin_bit_mask = (1ULL << APP_NETWORK_LED_GPIO) | (1ULL << APP_CONFIG_LED_GPIO),
+		.pin_bit_mask = (1ULL << APP_LED_GREEN_GPIO) | (1ULL << APP_LED_ORANGE_GPIO) | (1ULL << APP_LED_RED_GPIO),
 		.mode = GPIO_MODE_OUTPUT,
 		.pull_up_en = GPIO_PULLUP_DISABLE,
 		.pull_down_en = GPIO_PULLDOWN_DISABLE,
@@ -73,7 +73,7 @@ static void initPeripherals()
 
 	gpio_config_t buttonsConfig =
 	{
-		.pin_bit_mask = (1ULL << APP_CONFIG_BUTTON_GPIO),
+		.pin_bit_mask = (1ULL << APP_BUTTON_GPIO),
 		.mode = GPIO_MODE_INPUT,
 		.pull_up_en = GPIO_PULLUP_ENABLE,
 		.pull_down_en = GPIO_PULLDOWN_DISABLE,

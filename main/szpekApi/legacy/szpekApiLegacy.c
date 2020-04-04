@@ -5,7 +5,7 @@
  *      Author: szymo
  */
 
-#include "szpekApi.h"
+#include "szpekApiLegacy.h"
 
 #include <stdlib.h>
 #include <mbedtls/base64.h>
@@ -24,7 +24,7 @@ static void cJSONHelper_AddDateTimeToObject(cJSON* const object, const char* con
 
 static int performSignedPOST(const char* url, const char* jsonData);
 
-bool szpekApiSensorsMicro(const szpekApiSensorsMicroContract_t* data)
+bool szpekApiLegacySensorsMicro(const szpekApiLegacySensorsMicroContract_t* data)
 {
 	cJSON* root = cJSON_CreateObject();
 	cJSON_AddNumberToObject(root, "pm1Value", data->pm1Value);

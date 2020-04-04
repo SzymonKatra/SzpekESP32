@@ -47,4 +47,12 @@ void cryptoSignature(const unsigned char* data, size_t length, unsigned char sig
     mbedtls_md_hmac_finish(&s_mdCtx, signature);
 }
 
+void cryptoSignatureBase64(const unsigned char* data, size_t length, unsigned char base64Signature[CRYPTO_BASE64_BUFFER_LEN(32)])
+{
+	unsigned char signature[32];
+	cryptoSignature(data, length, signature);
+
+	size_t base64SigLen;
+	mbedtls_base64_encode((unsigned char*)base64Signature, CRYPTO_BASE64_BUFFER_LEN(32), &base64SigLen, signature, 32);
+}
 

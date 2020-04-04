@@ -10,15 +10,15 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 #include <freertos/task.h>
-#include "szpekApi.h"
+#include "szpekApi/legacy/szpekApiLegacy.h"
 #include "app.h"
 #include "settings.h"
 #include "logUtils.h"
 #include "reports.h"
 #include "network.h"
 
-static void toContract(const report_t* report, szpekApiSensorsMicroContract_t* contract);
-static void trySendUntilSucceeded(const szpekApiSensorsMicroContract_t* contract);
+static void toContract(const report_t* report, szpekApiLegacySensorsMicroContract_t* contract);
+static void trySendUntilSucceeded(const szpekApiLegacySensorsMicroContract_t* contract);
 
 void taskPushReports(void* p)
 {
@@ -29,14 +29,14 @@ void taskPushReports(void* p)
 		report_t report;
 		if (xQueueReceive(reportsQueue, &report, portMAX_DELAY) != pdTRUE) continue;
 
-		szpekApiSensorsMicroContract_t contract;
+		szpekApiLegacySensorsMicroContract_t contract;
 		toContract(&report, &contract);
 
 		trySendUntilSucceeded(&contract);
 	}
 }
 
-static void toContract(const report_t* report, szpekApiSensorsMicroContract_t* contract)
+static void toContract(const report_t* report, szpekApiLegacySensorsMicroContract_t* contract)
 {
 	contract->pm1Value = report->pm1;
 	contract->pm25Value = report->pm2_5;
@@ -47,13 +47,13 @@ static void toContract(const report_t* report, szpekApiSensorsMicroContract_t* c
 	contract->sensorCode = settingsGetSzpekId()->code; // todo: move to szpekApi
 }
 
-static void trySendUntilSucceeded(const szpekApiSensorsMicroContract_t* contract)
+static void trySendUntilSucceeded(const szpekApiLegacySensorsMicroContract_t* contract)
 {
 	bool success = false;
 	while (!success)
 	{
 		LOG_TASK_INFO("Pushing report... (%ld - %ld)", contract->periodFrom, contract->periodTo);
-		success = szpekApiSensorsMicro(contract);
+		success = szpekApiLegacySensorsMicro(contract);
 		if (success)
 		{
 			LOG_TASK_INFO("Report pushed successfully (%ld - %ld)!", contract->periodFrom, contract->periodTo);

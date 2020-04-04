@@ -18,14 +18,16 @@
 #include "app.h"
 #include "timeTriggers.h"
 
-static void minuteElapsedHandler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
+const timeTriggersEvent_t TRIGGER_AGGREGATION_EVENT = TIME_TRIGGERS_EVENT_MINUTE_PASSED;
+
+static void timePassedHandler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
 
 void taskAggregateData(void* p)
 {
 	QueueHandle_t reportsQueue = appGetITCStructures()->reportsQueue;
 
 	smogReset();
-	appRegisterEventHandler(TIME_TRIGGERS_EVENT, TIME_TRIGGERS_EVENT_MINUTE_PASSED, minuteElapsedHandler, NULL);
+	appRegisterEventHandler(TIME_TRIGGERS_EVENT, TRIGGER_AGGREGATION_EVENT, timePassedHandler, NULL);
 
 	time_t begin = time(NULL);
 	while (1)
@@ -57,7 +59,7 @@ void taskAggregateData(void* p)
 	}
 }
 
-static void minuteElapsedHandler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
+static void timePassedHandler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
 	xTaskNotifyGive(appGetTasks()->aggregateData);
 }

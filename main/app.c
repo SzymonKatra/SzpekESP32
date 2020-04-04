@@ -16,16 +16,12 @@
 #include "settings.h"
 #include "crypto.h"
 #include "configServer.h"
+#include <string.h>
 
 #define APP_INIT_PRIORITY (configTIMER_TASK_PRIORITY + 1)
 #define APP_EVENT_LOOP_PRIORITY (configTIMER_TASK_PRIORITY - 1)
 
 static const char* LOG_TAG = "App";
-
-const uart_port_t APP_PMS_UART_PORT = UART_NUM_2;
-const gpio_num_t APP_NETWORK_LED_GPIO = GPIO_NUM_32;
-const gpio_num_t APP_CONFIG_LED_GPIO = GPIO_NUM_33;
-const gpio_num_t APP_CONFIG_BUTTON_GPIO = GPIO_NUM_25;
 
 static esp_event_loop_handle_t s_appEventLoopHandle;
 
@@ -34,8 +30,8 @@ static appITCStructures_t s_itcStructures;
 static appTasksList_t s_tasks;
 static appTimersList_t s_timers;
 
-#define ledNetwork(value) gpio_set_level(APP_NETWORK_LED_GPIO, value)
-#define ledConfig(value) gpio_set_level(APP_CONFIG_LED_GPIO, value)
+#define ledNetwork(value) gpio_set_level(APP_LED_GREEN_GPIO, value)
+#define ledConfig(value) gpio_set_level(APP_LED_RED_GPIO, value)
 
 static void createAppEventLoop();
 static void setupTimeSync();
@@ -60,10 +56,25 @@ void appInit()
 	appRegisterEventHandler(NETWORK_EVENT, ESP_EVENT_ANY_ID, networkEventHandler, NULL);
 
 	settingsInit();
-	cryptoInit(settingsGetSzpekId()->secretBase64);
+	//cryptoInit(settingsGetSzpekId()->secretBase64);
+	cryptoInit("9NJn6LXPkr5In6QzpGR7N9siyIUmOT+a+b6Zoa9f7So=");
 	setupTimeSync();
 	networkInit();
 	smogInit();
+
+	const char* getRequest = "GET/api/device/path?param1=aaa&param2=bbb";
+	const char* postBody = "{ \"name\": \"value\" }";
+	char* bod = malloc(10000);
+	for (int i = 0; i < 10000; i++) bod[i] = i % 256;
+	unsigned char buf1[128];
+	unsigned char buf2[128];
+	unsigned char buf3[128];
+	cryptoSignatureBase64((const unsigned char*)getRequest, strlen(getRequest), buf1);
+	cryptoSignatureBase64((const unsigned char*)postBody, strlen(postBody), buf2);
+	cryptoSignatureBase64((const unsigned char*)bod, 0, buf3);
+	LOG_INFO("%s", buf1);
+	LOG_INFO("%s", buf2);
+	LOG_INFO("%s", buf3);
 
 	createITCStructures();
 	createTimers();

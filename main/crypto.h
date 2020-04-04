@@ -17,6 +17,6 @@
 void cryptoInit(const char* base64SecretKey);
 
 void cryptoSignature(const unsigned char* data, size_t length, unsigned char signature[32]);
-void cryptoJSONPack(const char* data, size_t length, char* result);
+void cryptoSignatureBase64(const unsigned char* data, size_t length, unsigned char base64Signature[CRYPTO_BASE64_BUFFER_LEN(32)]);
 
 #endif /* MAIN_CRYPTO_H_ */

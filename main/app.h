@@ -41,10 +41,11 @@ typedef struct
 	QueueHandle_t reportsQueue;
 } appITCStructures_t;
 
-extern const uart_port_t APP_PMS_UART_PORT;
-extern const gpio_num_t APP_NETWORK_LED_GPIO;
-extern const gpio_num_t APP_CONFIG_LED_GPIO;
-extern const gpio_num_t APP_CONFIG_BUTTON_GPIO;
+#define APP_PMS_UART_PORT 	UART_NUM_2
+#define APP_LED_GREEN_GPIO 	GPIO_NUM_32
+#define APP_LED_ORANGE_GPIO GPIO_NUM_33
+#define APP_LED_RED_GPIO 	GPIO_NUM_25
+#define APP_BUTTON_GPIO 	GPIO_NUM_26
 
 void appInit();
 
