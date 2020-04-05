@@ -10,9 +10,10 @@
 #include <stdlib.h>
 #include <esp_http_client.h>
 #include <cJSON.h>
+#include <cJSONExt.h>
 #include <url_encoding.h>
-#include "crypto.h"
 #include <string.h>
+#include "crypto.h"
 #include "logUtils.h"
 #include "settings.h"
 
@@ -27,9 +28,7 @@ static void createAuthHeader(const unsigned char* data, size_t length, char resu
 static int startSignedGET(const char* endpoint, esp_http_client_handle_t* client);
 static int performSignedPOST(const char* endpoint, const char* jsonData);
 static size_t readResponseString(esp_http_client_handle_t client, char* buffer, size_t length);
-
-static bool cJSON_ext_TryReadString(const cJSON* const jsonObject, const char* const fieldName, char* result);
-static bool cJSON_ext_TryReadNumber(const cJSON* const jsonObject, const char* const fieldName, double* result);
+static cJSON* readResponseJSON(esp_http_client_handle_t client);
 
 bool szpekApiV1GetRecommendedFirmwareMetadata(szpekApiV1FirmwareMetadata_t* result)
 {
@@ -39,18 +38,10 @@ bool szpekApiV1GetRecommendedFirmwareMetadata(szpekApiV1FirmwareMetadata_t* resu
 	int status = startSignedGET("/firmware/recommended", &client);
 	if (status == 200)
 	{
-		char* buffer = malloc(512);
-		readResponseString(client, buffer, 512);
-
-		cJSON* json = cJSON_Parse((char*)buffer);
-		success &= cJSON_ext_TryReadString(json, "name", result->name);
-		double rtDouble = 0;
-		success &= cJSON_ext_TryReadNumber(json, "releaseTimestamp", &rtDouble);
-		result->releaseTimestamp = (time_t)rtDouble;
-
+		cJSON* json = readResponseJSON(client);
+		success &= cJSONExt_TryReadString(json, "name", result->name);
+		success &= cJSONExt_TryReadTimestamp(json, "releaseTimestamp", &result->releaseTimestamp);
 		cJSON_Delete(json);
-
-		free(buffer);
 	}
 	else
 	{
@@ -181,26 +172,11 @@ static size_t readResponseString(esp_http_client_handle_t client, char* buffer, 
 	return pos;
 }
 
-static bool cJSON_ext_TryReadString(const cJSON* const jsonObject, const char* const fieldName, char* result)
+static cJSON* readResponseJSON(esp_http_client_handle_t client)
 {
-	cJSON* jsonField = cJSON_GetObjectItemCaseSensitive(jsonObject, fieldName);
-	if (cJSON_IsString(jsonField) && jsonField->valuestring != NULL)
-	{
-		strcpy(result, jsonField->valuestring);
-		return true;
-	}
-
-	return false;
-}
-
-static bool cJSON_ext_TryReadNumber(const cJSON* const jsonObject, const char* const fieldName, double* result)
-{
-	cJSON* jsonField = cJSON_GetObjectItemCaseSensitive(jsonObject, fieldName);
-	if (cJSON_IsNumber(jsonField))
-	{
-		*result = jsonField->valuedouble;
-		return true;
-	}
-
-	return false;
+	char* buffer = malloc(512);
+	readResponseString(client, buffer, 512);
+	cJSON* json = cJSON_Parse((char*)buffer);
+	free(buffer);
+	return json;
 }

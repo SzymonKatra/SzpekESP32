@@ -11,6 +11,7 @@
 #include <mbedtls/base64.h>
 #include <esp_http_client.h>
 #include <cJSON.h>
+#include <cJSONExt.h>
 #include "crypto.h"
 #include <string.h>
 #include "logUtils.h"
@@ -20,7 +21,6 @@ static const char* LOG_TAG = "SzpekApiLegacy";
 #define SZPEKAPI_BASE_URL "https://api.szpek.pl/api"
 
 static void szpekApiJSONPack(const char* data, size_t length, char* result);
-static void cJSONHelper_AddDateTimeToObject(cJSON* const object, const char* const name, const time_t timestamp);
 
 static int performSignedPOST(const char* url, const char* jsonData);
 
@@ -31,8 +31,8 @@ bool szpekApiLegacySensorsMicro(const szpekApiLegacySensorsMicroContract_t* data
 	cJSON_AddNumberToObject(root, "pm25Value", data->pm25Value);
 	cJSON_AddNumberToObject(root, "pm10Value", data->pm10Value);
 	cJSON_AddNumberToObject(root, "samplesQuantity", data->samplesQuantity);
-	cJSONHelper_AddDateTimeToObject(root, "periodFrom", data->periodFrom);
-	cJSONHelper_AddDateTimeToObject(root, "periodTo", data->periodTo);
+	cJSONExt_AddDateTimeToObject(root, "periodFrom", data->periodFrom);
+	cJSONExt_AddDateTimeToObject(root, "periodTo", data->periodTo);
 	cJSON_AddStringToObject(root, "sensorCode", data->sensorCode);
 	char* jsonStr = cJSON_PrintBuffered(root, 512, false);
 	cJSON_Delete(root);
@@ -41,14 +41,6 @@ bool szpekApiLegacySensorsMicro(const szpekApiLegacySensorsMicroContract_t* data
 	free(jsonStr);
 
 	return status == 200;
-}
-
-static void cJSONHelper_AddDateTimeToObject(cJSON* const object, const char* const name, const time_t timestamp)
-{
-	struct tm p = *gmtime(&timestamp);
-	char buffer[21]; // YYYY-MM-DDTHH:mm:ssZ + null terminator
-	sprintf(buffer, "%04hu-%02hhu-%02hhuT%02hhu:%02hhu:%02hhuZ", p.tm_year + 1900, p.tm_mon + 1, p.tm_mday, p.tm_hour, p.tm_min, p.tm_sec);
-	cJSON_AddStringToObject(object, name, buffer);
 }
 
 static void szpekApiJSONPack(const char* data, size_t length, char* result)
