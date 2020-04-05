@@ -11,6 +11,7 @@
 #include <freertos/queue.h>
 #include <freertos/task.h>
 #include "szpekApi/legacy/szpekApiLegacy.h"
+#include "szpekApi/v1/szpekApiV1.h"
 #include "app.h"
 #include "settings.h"
 #include "logUtils.h"
@@ -22,6 +23,23 @@ static void trySendUntilSucceeded(const szpekApiLegacySensorsMicroContract_t* co
 
 void taskPushReports(void* p)
 {
+	//configASSERT(networkIsEstablished());
+
+	//vTaskSuspend(NULL);
+	LOG_TASK_INFO("Push startedz");
+	szpekApiV1FirmwareMetadata_t meta;
+	bool s = szpekApiV1GetRecommendedFirmwareMetadata(&meta);
+	LOG_TASK_INFO("%d %s %ld", s, meta.name, meta.releaseTimestamp);
+
+	unsigned char b;
+	szpekApiV1FileDownloadState_t state;
+	szpekApiV1DownloadFirmwareBegin(meta.name, &state);
+	while (szpekApiV1DownloadFirmwareRead(&state, &b, 1) > 0)
+	{
+		LOG_TASK_INFO("%d", b);
+	}
+	szpekApiV1DownloadFirmwareEnd(&state);
+
 	QueueHandle_t reportsQueue = appGetITCStructures()->reportsQueue;
 
 	while (1)

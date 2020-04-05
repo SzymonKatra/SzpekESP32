@@ -11,7 +11,6 @@
 #include <string.h>
 #include "logUtils.h"
 
-
 #define CRYPTO_SECRET_LEN (32)
 
 static const char* LOG_TAG = "Crypto";
@@ -47,7 +46,7 @@ void cryptoSignature(const unsigned char* data, size_t length, unsigned char sig
     mbedtls_md_hmac_finish(&s_mdCtx, signature);
 }
 
-void cryptoSignatureBase64(const unsigned char* data, size_t length, unsigned char base64Signature[CRYPTO_BASE64_BUFFER_LEN(32)])
+void cryptoSignatureBase64(const unsigned char* data, size_t length, char base64Signature[CRYPTO_BASE64_BUFFER_LEN(32)])
 {
 	unsigned char signature[32];
 	cryptoSignature(data, length, signature);

@@ -56,25 +56,10 @@ void appInit()
 	appRegisterEventHandler(NETWORK_EVENT, ESP_EVENT_ANY_ID, networkEventHandler, NULL);
 
 	settingsInit();
-	//cryptoInit(settingsGetSzpekId()->secretBase64);
-	cryptoInit("9NJn6LXPkr5In6QzpGR7N9siyIUmOT+a+b6Zoa9f7So=");
+	cryptoInit(settingsGetSzpekId()->secretBase64);
 	setupTimeSync();
 	networkInit();
 	smogInit();
-
-	const char* getRequest = "GET/api/device/path?param1=aaa&param2=bbb";
-	const char* postBody = "{ \"name\": \"value\" }";
-	char* bod = malloc(10000);
-	for (int i = 0; i < 10000; i++) bod[i] = i % 256;
-	unsigned char buf1[128];
-	unsigned char buf2[128];
-	unsigned char buf3[128];
-	cryptoSignatureBase64((const unsigned char*)getRequest, strlen(getRequest), buf1);
-	cryptoSignatureBase64((const unsigned char*)postBody, strlen(postBody), buf2);
-	cryptoSignatureBase64((const unsigned char*)bod, 0, buf3);
-	LOG_INFO("%s", buf1);
-	LOG_INFO("%s", buf2);
-	LOG_INFO("%s", buf3);
 
 	createITCStructures();
 	createTimers();
@@ -181,14 +166,24 @@ static void createTimers()
 
 static void createTasks()
 {
+	configASSERT(uxTaskPriorityGet(NULL) == APP_INIT_PRIORITY);
 	LOG_INFO("Creating tasks...");
 
 	FREERTOS_ERROR_CHECK(xTaskCreate(taskCheckButton, "CheckButton", 2048, NULL, 6, &s_tasks.checkButton));
+	configASSERT(s_tasks.checkButton);
+
 	FREERTOS_ERROR_CHECK(xTaskCreate(taskSmogSensor, "SmogSensor", 2048, NULL, 7, &s_tasks.smogSensor));
+	configASSERT(s_tasks.smogSensor);
+
 	FREERTOS_ERROR_CHECK(xTaskCreate(taskAggregateData, "AggregateData", 2048, NULL, 5, &s_tasks.aggregateData));
+	configASSERT(s_tasks.aggregateData);
 	vTaskSuspend(s_tasks.aggregateData);
+	configASSERT(eTaskGetState(s_tasks.aggregateData) == eSuspended);
+
 	FREERTOS_ERROR_CHECK(xTaskCreate(taskPushReports, "PushReports", 8192, NULL, 1, &s_tasks.pushReports));
+	configASSERT(s_tasks.pushReports);
 	vTaskSuspend(s_tasks.pushReports);
+	configASSERT(eTaskGetState(s_tasks.pushReports) == eSuspended); // INVESTIGATE: suspended task pre-empted and not suspended??? maybe other tasks are preempting?
 
 	LOG_INFO("Tasks created successfully!");
 }

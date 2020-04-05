@@ -15,7 +15,7 @@
 #include <string.h>
 #include "logUtils.h"
 
-static const char* LOG_TAG = "SzpekApi";
+static const char* LOG_TAG = "SzpekApiLegacy";
 
 #define SZPEKAPI_BASE_URL "https://api.szpek.pl/api"
 
