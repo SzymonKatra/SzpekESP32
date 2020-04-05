@@ -10,6 +10,7 @@
 #include <string.h>
 #include <esp_partition.h>
 #include <cJSON.h>
+#include <cJSONExt.h>
 #include <nvs.h>
 #include "logUtils.h"
 
@@ -94,10 +95,8 @@ static void loadSzpekId()
 	ESP_ERROR_CHECK(esp_partition_read(szpekIdPartition, 0, buffer, SZPEKID_MAX_SIZE));
 
 	cJSON* szpekid = cJSON_Parse(buffer);
-	cJSON* szpek_code = cJSON_GetObjectItemCaseSensitive(szpekid, "code");
-	strcpy(s_szpekId.code, szpek_code->valuestring);
-	cJSON* szpek_secret = cJSON_GetObjectItemCaseSensitive(szpekid, "secret");
-	strcpy(s_szpekId.secretBase64, szpek_secret->valuestring);
+	cJSONExt_TryReadString(szpekid, "code", s_szpekId.code);
+	cJSONExt_TryReadString(szpekid, "secret", s_szpekId.secretBase64);
 	cJSON_Delete(szpekid);
 
 	LOG_INFO("SzpekID Code = %s", s_szpekId.code);
