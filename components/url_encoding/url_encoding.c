@@ -25,9 +25,9 @@ static inline unsigned char from_hex(unsigned char ch)
 	return ch;
 }
 
-void urlEncode(const char* input, char* output, size_t size)
+void urlEncode(const char* input, char* output, size_t outputSize)
 {
-	while (*input && size > 1)
+	while (*input && outputSize > 1)
 	{
 		unsigned char c = (unsigned char)*input;
 
@@ -46,27 +46,27 @@ void urlEncode(const char* input, char* output, size_t size)
 		{
 			*output = '%';
 			output++;
-			size--;
-			if (size <= 1) break;
+			outputSize--;
+			if (outputSize <= 1) break;
 
 			*output = to_hex(c >> 4);
 			output++;
-			size--;
-			if (size <= 1) break;
+			outputSize--;
+			if (outputSize <= 1) break;
 
 			*output = to_hex(c % 16);
 		}
 
 		output++;
-		size--;
+		outputSize--;
 		input++;
 	}
 	*output = 0;
 }
 
-void urlDecode(const char* input, char* output, size_t size)
+void urlDecode(const char* input, char* output, size_t outputSize)
 {
-	while (*input && size > 1)
+	while (*input && outputSize > 1)
 	{
 		unsigned char c = *input;
 		unsigned char c1 = *(input + 1);
@@ -89,7 +89,7 @@ void urlDecode(const char* input, char* output, size_t size)
 		}
 
 		output++;
-		size--;
+		outputSize--;
 		input++;
 	}
 	*output = 0;

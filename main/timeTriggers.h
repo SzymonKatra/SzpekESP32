@@ -15,3 +15,5 @@ typedef enum
 	TIME_TRIGGERS_EVENT_HOUR_PASSED
 } timeTriggersEvent_t;
 
+typedef int timeTriggersEventMinuteData_t;
+typedef int timeTriggersEventHourData_t;

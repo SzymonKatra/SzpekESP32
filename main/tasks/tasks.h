@@ -14,5 +14,6 @@
 #include "taskPushReports.h"
 #include "taskAggregateData.h"
 #include "taskCheckButton.h"
+#include "taskFirmwareOTA.h"
 
 #endif /* MAIN_TASKS_TASKS_H_ */

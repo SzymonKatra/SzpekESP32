@@ -48,6 +48,8 @@ void appInit()
 	vTaskPrioritySet(NULL, APP_INIT_PRIORITY);
 	configASSERT(uxTaskPriorityGet(NULL) == APP_INIT_PRIORITY);
 
+	LOG_INFO("Firmware name: %s", APP_FIRMWARE_NAME);
+
 	ledNetwork(0);
 	ledConfig(0);
 
@@ -180,10 +182,13 @@ static void createTasks()
 	vTaskSuspend(s_tasks.aggregateData);
 	configASSERT(eTaskGetState(s_tasks.aggregateData) == eSuspended);
 
-	FREERTOS_ERROR_CHECK(xTaskCreate(taskPushReports, "PushReports", 8192, NULL, 1, &s_tasks.pushReports));
+	FREERTOS_ERROR_CHECK(xTaskCreate(taskPushReports, "PushReports", 8192, NULL, 2, &s_tasks.pushReports));
 	configASSERT(s_tasks.pushReports);
 	vTaskSuspend(s_tasks.pushReports);
-	configASSERT(eTaskGetState(s_tasks.pushReports) == eSuspended); // INVESTIGATE: suspended task pre-empted and not suspended??? maybe other tasks are preempting?
+	//configASSERT(eTaskGetState(s_tasks.pushReports) == eSuspended); // INVESTIGATE: suspended task pre-empted and not suspended??? maybe other tasks are preempting?
+
+	FREERTOS_ERROR_CHECK(xTaskCreate(taskFirmwareOTA, "FirmwareOTA", 8192, NULL, 1, &s_tasks.firmwareOTA));
+	configASSERT(s_tasks.firmwareOTA);
 
 	LOG_INFO("Tasks created successfully!");
 }

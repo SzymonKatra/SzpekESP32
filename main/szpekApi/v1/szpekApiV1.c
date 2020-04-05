@@ -30,6 +30,50 @@ static int performSignedPOST(const char* endpoint, const char* jsonData);
 static size_t readResponseString(esp_http_client_handle_t client, char* buffer, size_t length);
 static cJSON* readResponseJSON(esp_http_client_handle_t client);
 
+bool szpekApiV1ReportSmog(const szpekApiV1ReportSmog_t* report)
+{
+	cJSON* root = cJSON_CreateObject();
+	cJSON_AddNumberToObject(root, "pm10Value", report->pm10Value);
+	cJSON_AddNumberToObject(root, "pm2_5Value", report->pm2_5Value);
+	cJSON_AddNumberToObject(root, "pm1Value", report->pm1Value);
+	cJSON_AddNumberToObject(root, "samplesCount", report->samplesCount);
+	cJSON_AddNumberToObject(root, "timestampFrom", report->timestampFrom);
+	cJSON_AddNumberToObject(root, "timestampTo", report->timestampTo);
+	char* jsonStr = cJSON_PrintBuffered(root, 512, false);
+	cJSON_Delete(root);
+
+	int status = performSignedPOST("/smog", jsonStr);
+	free(jsonStr);
+
+	return status == 200;
+}
+
+bool szpekApiV1ReportStartup(const char* firmwareName)
+{
+	cJSON* root = cJSON_CreateObject();
+	cJSON_AddStringToObject(root, "message", firmwareName);
+	char* jsonStr = cJSON_PrintBuffered(root, 128, false);
+	cJSON_Delete(root);
+
+	int status = performSignedPOST("/startup", jsonStr);
+	free(jsonStr);
+
+	return status == 200;
+}
+
+bool szpekApiV1Log(const char* message)
+{
+	cJSON* root = cJSON_CreateObject();
+	cJSON_AddStringToObject(root, "message", message);
+	char* jsonStr = cJSON_PrintUnformatted(root);
+	cJSON_Delete(root);
+
+	int status = performSignedPOST("/log", jsonStr);
+	free(jsonStr);
+
+	return status == 200;
+}
+
 bool szpekApiV1GetRecommendedFirmwareMetadata(szpekApiV1FirmwareMetadata_t* result)
 {
 	bool success = true;
@@ -54,17 +98,26 @@ bool szpekApiV1GetRecommendedFirmwareMetadata(szpekApiV1FirmwareMetadata_t* resu
 
 bool szpekApiV1DownloadFirmwareBegin(const char* firmwareName, szpekApiV1FileDownloadState_t* state)
 {
+	char firmwareNameUrlEncoded[64];
+	urlEncode(firmwareName, firmwareNameUrlEncoded, 64);
 	char endpoint[128];
-	snprintf(endpoint, 128, "/firmware/download/%s", firmwareName);
+	snprintf(endpoint, 128, "/firmware/download/%s", firmwareNameUrlEncoded);
 
 	int status = startSignedGET(endpoint, &state->httpClientHandle);
+	state->bytesRead = 0;
 
 	return status == 200;
 }
 
-size_t szpekApiV1DownloadFirmwareRead(szpekApiV1FileDownloadState_t* state, unsigned char* buffer, size_t length)
+int szpekApiV1DownloadFirmwareRead(szpekApiV1FileDownloadState_t* state, unsigned char* buffer, size_t length)
 {
-	return esp_http_client_read(state->httpClientHandle, (char*)buffer, length);
+	int bytesRead = esp_http_client_read(state->httpClientHandle, (char*)buffer, length);
+	if (bytesRead > 0)
+	{
+		state->bytesRead += bytesRead;
+	}
+
+	return bytesRead;
 }
 
 void szpekApiV1DownloadFirmwareEnd(szpekApiV1FileDownloadState_t* state)
@@ -98,7 +151,15 @@ static int startSignedGET(const char* endpoint, esp_http_client_handle_t* client
 	esp_http_client_set_header(*client, "Authorization", authHeader);
 
 	LOG_INFO("Performing HTTP GET to %s ...", config.url);
-	esp_err_t err = esp_http_client_perform(*client);
+
+	esp_err_t err = esp_http_client_open(*client, 0);
+	if (err == ESP_OK)
+	{
+		if (esp_http_client_fetch_headers(*client) < 0)
+		{
+			err = ESP_FAIL;
+		}
+	}
 	int status;
 	if (err == ESP_OK)
 	{

@@ -16,6 +16,7 @@
 typedef struct
 {
 	esp_http_client_handle_t httpClientHandle;
+	size_t bytesRead;
 } szpekApiV1FileDownloadState_t;
 
 typedef struct
@@ -24,10 +25,24 @@ typedef struct
 	time_t releaseTimestamp;
 } szpekApiV1FirmwareMetadata_t;
 
+typedef struct
+{
+	float pm10Value;
+	float pm2_5Value;
+	float pm1Value;
+	size_t samplesCount;
+	time_t timestampFrom;
+	time_t timestampTo;
+} szpekApiV1ReportSmog_t;
+
+bool szpekApiV1ReportSmog(const szpekApiV1ReportSmog_t* report);
+
+bool szpekApiV1Log(const char* message);
+
 bool szpekApiV1GetRecommendedFirmwareMetadata(szpekApiV1FirmwareMetadata_t* result);
 
 bool szpekApiV1DownloadFirmwareBegin(const char* firmwareName, szpekApiV1FileDownloadState_t* state);
-size_t szpekApiV1DownloadFirmwareRead(szpekApiV1FileDownloadState_t* state, unsigned char* buffer, size_t length);
+int szpekApiV1DownloadFirmwareRead(szpekApiV1FileDownloadState_t* state, unsigned char* buffer, size_t length);
 void szpekApiV1DownloadFirmwareEnd(szpekApiV1FileDownloadState_t* state);
 
 #endif /* MAIN_SZPEKAPI_V1_SZPEKAPIV1_H_ */
