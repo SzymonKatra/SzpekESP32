@@ -39,7 +39,8 @@ typedef struct
 
 typedef struct
 {
-	QueueHandle_t reportsQueue;
+	QueueHandle_t reportSmogQueue;
+	QueueHandle_t reportMiscQueue;
 } appITCStructures_t;
 
 //#define APP_FIRMWARE_NAME "esp32_2020-04-19"

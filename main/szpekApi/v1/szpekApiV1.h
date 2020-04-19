@@ -37,6 +37,8 @@ typedef struct
 
 bool szpekApiV1ReportSmog(const szpekApiV1ReportSmog_t* report);
 
+bool szpekApiV1ReportStartup(const char* firmwareName);
+
 bool szpekApiV1Log(const char* message);
 
 bool szpekApiV1GetRecommendedFirmwareMetadata(szpekApiV1FirmwareMetadata_t* result);

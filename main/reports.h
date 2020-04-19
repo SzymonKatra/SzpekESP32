@@ -19,6 +19,6 @@ typedef struct
     uint32_t samplesCount;
     time_t timestampFrom;
     time_t timestampTo;
-} report_t;
+} reportSmog_t;
 
 #endif /* MAIN_REPORTS_H_ */

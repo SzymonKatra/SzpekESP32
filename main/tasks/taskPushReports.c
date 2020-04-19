@@ -17,16 +17,19 @@
 #include "reports.h"
 #include "network.h"
 
-static void toContract(const report_t* report, szpekApiV1ReportSmog_t* contract);
+static void toContract(const reportSmog_t* report, szpekApiV1ReportSmog_t* contract);
 static void trySendUntilSucceeded(const szpekApiV1ReportSmog_t* contract);
+static void sendStartupReportUntilSucceded();
 
 void taskPushReports(void* p)
 {
-	QueueHandle_t reportsQueue = appGetITCStructures()->reportsQueue;
+	QueueHandle_t reportsQueue = appGetITCStructures()->reportSmogQueue;
+
+	sendStartupReportUntilSucceded();
 
 	while (1)
 	{
-		report_t report;
+		reportSmog_t report;
 		if (xQueueReceive(reportsQueue, &report, portMAX_DELAY) != pdTRUE) continue;
 
 		szpekApiV1ReportSmog_t contract;
@@ -36,7 +39,7 @@ void taskPushReports(void* p)
 	}
 }
 
-static void toContract(const report_t* report, szpekApiV1ReportSmog_t* contract)
+static void toContract(const reportSmog_t* report, szpekApiV1ReportSmog_t* contract)
 {
 	contract->pm1Value = report->pm1;
 	contract->pm2_5Value = report->pm2_5;
@@ -61,6 +64,25 @@ static void trySendUntilSucceeded(const szpekApiV1ReportSmog_t* contract)
 		{
 			LOG_TASK_ERROR("An error occurred while pushing report (%ld - %ld)!", contract->timestampFrom, contract->timestampTo);
 			vTaskDelay(pdMS_TO_TICKS(10000));
+		}
+	}
+}
+
+static void sendStartupReportUntilSucceded()
+{
+	bool success = false;
+	while (!success)
+	{
+		LOG_TASK_INFO("Reporting startup...");
+		success = szpekApiV1ReportStartup(APP_FIRMWARE_NAME);
+		if (success)
+		{
+			LOG_TASK_INFO("Startup reported successfully!");
+		}
+		else
+		{
+			LOG_TASK_ERROR("An error occurred while reporting startup!");
+			vTaskDelay(pdMS_TO_TICKS(5000));
 		}
 	}
 }

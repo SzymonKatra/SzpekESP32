@@ -51,7 +51,7 @@ bool szpekApiV1ReportSmog(const szpekApiV1ReportSmog_t* report)
 bool szpekApiV1ReportStartup(const char* firmwareName)
 {
 	cJSON* root = cJSON_CreateObject();
-	cJSON_AddStringToObject(root, "message", firmwareName);
+	cJSON_AddStringToObject(root, "firmwareName", firmwareName);
 	char* jsonStr = cJSON_PrintBuffered(root, 128, false);
 	cJSON_Delete(root);
 

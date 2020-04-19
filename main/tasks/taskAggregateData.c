@@ -24,7 +24,7 @@ static void timePassedHandler(void* arg, esp_event_base_t event_base, int32_t ev
 
 void taskAggregateData(void* p)
 {
-	QueueHandle_t reportsQueue = appGetITCStructures()->reportsQueue;
+	QueueHandle_t reportsQueue = appGetITCStructures()->reportSmogQueue;
 
 	smogReset();
 	appRegisterEventHandler(TIME_TRIGGERS_EVENT, TRIGGER_AGGREGATION_EVENT, timePassedHandler, NULL);
@@ -38,7 +38,7 @@ void taskAggregateData(void* p)
 		smogResult_t smogResult;
 		smogSummaryAndReset(&smogResult);
 
-		report_t report;
+		reportSmog_t report;
 		report.pm1 = smogResult.pm1;
 		report.pm2_5 = smogResult.pm2_5;
 		report.pm10 = smogResult.pm10;
@@ -49,7 +49,7 @@ void taskAggregateData(void* p)
 		// todo: mutex?
 		if (uxQueueSpacesAvailable(reportsQueue) == 0)
 		{
-			report_t trash;
+			reportSmog_t trash;
 			xQueueReceive(reportsQueue, &trash, 0);
 		}
 

@@ -150,8 +150,8 @@ static void createITCStructures()
 {
 	LOG_INFO("Creating ITC structures...");
 
-	s_itcStructures.reportsQueue = xQueueCreate(24, sizeof(report_t));
-	configASSERT(s_itcStructures.reportsQueue);
+	s_itcStructures.reportSmogQueue = xQueueCreate(24, sizeof(reportSmog_t));
+	configASSERT(s_itcStructures.reportSmogQueue);
 
 	LOG_INFO("ITC structures created successfully!");
 }
