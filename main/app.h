@@ -42,11 +42,8 @@ typedef struct
 	QueueHandle_t reportsQueue;
 } appITCStructures_t;
 
-#ifdef NDEBUG
-#define APP_FIRMWARE_NAME "esp32_2020-04-05"
-#else
+//#define APP_FIRMWARE_NAME "esp32_2020-04-19"
 #define APP_FIRMWARE_NAME "esp32_dev"
-#endif
 
 #define APP_PMS_UART_PORT 	UART_NUM_2
 #define APP_LED_GREEN_GPIO 	GPIO_NUM_32

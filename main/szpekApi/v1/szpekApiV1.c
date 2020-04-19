@@ -19,8 +19,8 @@
 
 static const char* LOG_TAG = "SzpekApiV1";
 
-//#define API_URL "https://api.szpek.pl"
-#define API_URL "http://192.168.0.151:5001"
+#define API_URL "https://api.szpek.pl"
+//#define API_URL "http://192.168.0.151:5001"
 #define API_PATH "/sensorApi/v1"
 
 static void createAuthHeader(const unsigned char* data, size_t length, char result[128]);

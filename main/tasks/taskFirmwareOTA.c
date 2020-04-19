@@ -26,7 +26,7 @@ static bool updateFirmware(const char* firmwareName, const esp_partition_t** new
 
 void taskFirmwareOTA(void* p)
 {
-	appRegisterEventHandler(TIME_TRIGGERS_EVENT, TIME_TRIGGERS_EVENT_MINUTE_PASSED, hourPassedHandler, NULL);
+	appRegisterEventHandler(TIME_TRIGGERS_EVENT, TIME_TRIGGERS_EVENT_HOUR_PASSED, hourPassedHandler, NULL);
 
 	while (1)
 	{
@@ -34,6 +34,7 @@ void taskFirmwareOTA(void* p)
 		szpekApiV1FirmwareMetadata_t firmwareMetadata;
 		if (needsFirmwareUpdate(&firmwareMetadata))
 		{
+			LOG_TASK_INFO("Updating firmware started!");
 			const esp_partition_t* newBootPartition = NULL;
 			if (updateFirmware(firmwareMetadata.name, &newBootPartition))
 			{
@@ -44,16 +45,20 @@ void taskFirmwareOTA(void* p)
 				esp_restart();
 			}
 		}
+		else
+		{
+			LOG_TASK_INFO("Firmware is up to date!");
+		}
 	}
 }
 
 static void hourPassedHandler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
 	timeTriggersEventHourData_t* hourData = (timeTriggersEventHourData_t*)event_data;
-	//if (*hourData == 0)
-	//{
+	if (*hourData == 0)
+	{
 		xTaskNotifyGive(appGetTasks()->firmwareOTA);
-	//}
+	}
 }
 
 static bool needsFirmwareUpdate(szpekApiV1FirmwareMetadata_t* firmwareMetadata)
