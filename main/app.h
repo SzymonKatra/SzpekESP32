@@ -56,6 +56,7 @@ void appInit();
 
 appMode_t appGetCurrentMode();
 void appChangeMode(appMode_t appMode);
+void appTriggerFirmwareUpdateCheck();
 
 esp_event_loop_handle_t appGetEventLoopHandle();
 const appITCStructures_t* appGetITCStructures();

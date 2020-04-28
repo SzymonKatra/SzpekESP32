@@ -7,6 +7,7 @@
 #include <esp_event.h>
 #include <esp_sntp.h>
 #include <driver/gpio.h>
+#include <esp_ota_ops.h>
 #include "network.h"
 #include "logUtils.h"
 #include "tasks/tasks.h"
@@ -68,6 +69,7 @@ void appInit()
 	createTasks();
 
 	appChangeMode(APP_MODE_RUNNING);
+	esp_ota_mark_app_valid_cancel_rollback();
 }
 
 appMode_t appGetCurrentMode()
@@ -103,6 +105,11 @@ void appChangeMode(appMode_t appMode)
 	{
 		networkHotspot("szpek", "szpekszpek"); // todo: from config
 	}
+}
+
+void appTriggerFirmwareUpdateCheck()
+{
+	xTaskNotifyGive(s_tasks.firmwareOTA);
 }
 
 esp_event_loop_handle_t appGetEventLoopHandle()
@@ -198,6 +205,7 @@ static void networkEventHandler(void* arg, esp_event_base_t event_base, int32_t 
 	if (event_id == NETWORK_EVENT_CONNECTION_ESTABLISHED)
 	{
 		LOG_INFO("Network connection established");
+		appTriggerFirmwareUpdateCheck();
 		vTaskResume(s_tasks.pushReports);
 		ledNetwork(1);
 	}
