@@ -13,6 +13,7 @@
 #include <freertos/timers.h>
 #include <freertos/queue.h>
 #include <driver/uart.h>
+#include <driver/i2c.h>
 #include <driver/gpio.h>
 #include <esp_event.h>
 
@@ -47,6 +48,7 @@ typedef struct
 #define APP_FIRMWARE_NAME "esp32_dev"
 
 #define APP_PMS_UART_PORT 	UART_NUM_2
+#define APP_I2C_MASTER		I2C_NUM_0
 #define APP_LED_GREEN_GPIO 	GPIO_NUM_32
 #define APP_LED_ORANGE_GPIO GPIO_NUM_33
 #define APP_LED_RED_GPIO 	GPIO_NUM_25
