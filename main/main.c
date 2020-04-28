@@ -70,7 +70,6 @@ static void initPeripherals()
 	uart_set_pin(APP_PMS_UART_PORT, GPIO_NUM_17, GPIO_NUM_16, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
 	uart_driver_install(APP_PMS_UART_PORT, 128 * 2, 0, 0, NULL, 0);
 
-	vTaskDelay(pdMS_TO_TICKS(1000));
 	i2c_config_t i2cConfig;
 	i2cConfig.mode = I2C_MODE_MASTER;
 	i2cConfig.sda_io_num = GPIO_NUM_21;
