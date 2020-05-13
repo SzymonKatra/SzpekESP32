@@ -1,0 +1,5 @@
+szpekid,namespace,
+code,data,string
+secretBase64,data,string
+board,data,string
+model,data,string

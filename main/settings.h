@@ -15,6 +15,8 @@ typedef struct
 {
 	char code[32];
 	char secretBase64[45];
+	char board[32];
+	char model[64];
 } settingsSzpekId_t;
 
 typedef struct

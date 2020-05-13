@@ -23,6 +23,8 @@ static settingsWifi_t s_wifi;
 static void loadSzpekId();
 static void loadWifi(nvs_handle_t nvsHandle);
 
+static bool nvsGetStrSafe(nvs_handle_t nvsHandle, const char* key, char* outValue, size_t maxLength);
+
 void settingsInit()
 {
 	s_wifiValid = false;
@@ -38,7 +40,7 @@ void settingsInit()
 	}
 	else
 	{
-		LOG_ERROR("Error (%s) opening NVS handle!", esp_err_to_name(err));
+		LOG_ERROR("Error (%s) opening NVS handle for settings!", esp_err_to_name(err));
 	}
 }
 
@@ -77,34 +79,24 @@ void settingsSetWifi(const settingsWifi_t* wifiSettings)
 
 static void loadSzpekId()
 {
-	const esp_partition_type_t SZPEKID_PARTITION_TYPE = 0x40;
-	const esp_partition_subtype_t SZPEKID_PARTITION_SUBTYPE = 0;
-	const char* SZPEKID_PARTITION_LABEL = "szpekid";
-	const size_t SZPEKID_MAX_SIZE = 512; // partition is bigger but we don't need that
-
-	LOG_INFO("Loading SzpekID from (%s, %d, %d)...", SZPEKID_PARTITION_LABEL, SZPEKID_PARTITION_TYPE, SZPEKID_PARTITION_SUBTYPE);
-
-	const esp_partition_t* szpekIdPartition = esp_partition_find_first(SZPEKID_PARTITION_TYPE, SZPEKID_PARTITION_SUBTYPE, SZPEKID_PARTITION_LABEL);
-	if (szpekIdPartition == NULL)
+	nvs_handle_t nvsHandle;
+	esp_err_t err = nvs_open("szpekid", NVS_READONLY, &nvsHandle);
+	if (err != ESP_OK)
 	{
-		LOG_ERROR("No szpekid partition was found!!!");
-		return;
+		LOG_ERROR("Error (%s) opening NVS handle for szpekid!", esp_err_to_name(err));
 	}
 
-	char* buffer = malloc(SZPEKID_MAX_SIZE);
-	ESP_ERROR_CHECK(esp_partition_read(szpekIdPartition, 0, buffer, SZPEKID_MAX_SIZE));
-
-	cJSON* szpekid = cJSON_Parse(buffer);
-	cJSONExt_TryReadString(szpekid, "code", s_szpekId.code);
-	cJSONExt_TryReadString(szpekid, "secret", s_szpekId.secretBase64);
-	cJSON_Delete(szpekid);
+	nvsGetStrSafe(nvsHandle, "code", s_szpekId.code, sizeof(s_szpekId.code));
+	nvsGetStrSafe(nvsHandle, "secretBase64", s_szpekId.secretBase64, sizeof(s_szpekId.secretBase64));
+	nvsGetStrSafe(nvsHandle, "board", s_szpekId.board, sizeof(s_szpekId.board));
+	nvsGetStrSafe(nvsHandle, "model", s_szpekId.model, sizeof(s_szpekId.model));
 
 	LOG_INFO("SzpekID Code = %s", s_szpekId.code);
-	LOG_INFO("SzpekID Secret = %s", s_szpekId.secretBase64);
+	LOG_INFO("SzpekID SecretBase64 = %s", s_szpekId.secretBase64);
+	LOG_INFO("SzpekID Board = %s", s_szpekId.board);
+	LOG_INFO("SzpekID Model = %s", s_szpekId.model);
 
-	free(buffer);
-
-	LOG_INFO("SzpekID loaded!");
+	nvs_close(nvsHandle);
 }
 
 static void loadWifi(nvs_handle_t nvsHandle)
@@ -124,4 +116,25 @@ static void loadWifi(nvs_handle_t nvsHandle)
 	}
 
 	s_wifiValid = eSsid == ESP_OK && ePass == ESP_OK;
+}
+
+static bool nvsGetStrSafe(nvs_handle_t nvsHandle, const char* key, char* outValue, size_t maxLength)
+{
+	esp_err_t err = nvs_get_str(nvsHandle, key, outValue, &maxLength);
+	if (err != ESP_OK)
+	{
+		if (err == ESP_ERR_NVS_NOT_FOUND)
+		{
+			LOG_ERROR("Key %s not found!", key);
+		}
+		else
+		{
+			LOG_ERROR("Unknown error occured while reading NVS (%d)/(%s)", err, esp_err_to_name(err));
+		}
+
+		outValue = "";
+		return false;
+	}
+
+	return true;
 }

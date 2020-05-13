@@ -103,7 +103,10 @@ void appChangeMode(appMode_t appMode)
 	}
 	else if (appMode == APP_MODE_CONFIG)
 	{
-		networkHotspot("szpek", "szpekszpek"); // todo: from config
+		const settingsSzpekId_t* szpekId = settingsGetSzpekId();
+		char ssidBuffer[64];
+		sprintf(ssidBuffer, "szpek-%s", szpekId->code);
+		networkHotspot(ssidBuffer, "szpekadmin");
 	}
 }
 

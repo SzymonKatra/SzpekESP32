@@ -1,0 +1,1 @@
+esptool -p COM3 -b 460800 --before default_reset --after hard_reset write_flash 0x9000 out\bin\szpek_nvs-%1.bin
