@@ -22,9 +22,16 @@ void taskSmogSensor(void* p)
 	while (1)
 	{
 		pmsData_t result;
-		pmsRead(&params, &result);
-		smogAccumulate(result.pm1Outdoor, result.pm2_5Outdoor, result.pm10Outdoor);
-		//LOG_TASK_INFO("%d, PM1: %d, PM2.5: %d, PM10: %d", errcode, result.pm1Outdoor, result.pm2_5Outdoor, result.pm10Outdoor);
+		pmsError_t err = pmsRead(&params, &result);
+		if (err == PMS_OK)
+		{
+			smogAccumulate(result.pm1Outdoor, result.pm2_5Outdoor, result.pm10Outdoor);
+		}
+		else
+		{
+			LOG_TASK_ERROR("An error occurred while reading data from PMS7003! Error = %d", err);
+		}
+		//LOG_TASK_INFO("%d, PM1: %d, PM2.5: %d, PM10: %d", err, result.pm1Outdoor, result.pm2_5Outdoor, result.pm10Outdoor);
 	}
 }
 

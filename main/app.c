@@ -33,6 +33,7 @@ static appTimersList_t s_timers;
 
 #define ledNetwork(value) gpio_set_level(APP_LED_GREEN_GPIO, value)
 #define ledConfig(value) gpio_set_level(APP_LED_RED_GPIO, value)
+#define ledOrange(value) gpio_set_level(APP_LED_ORANGE_GPIO, value)
 
 static void createAppEventLoop();
 static void setupTimeSync();
@@ -53,6 +54,7 @@ void appInit()
 
 	ledNetwork(0);
 	ledConfig(0);
+	ledOrange(1);
 
 	createAppEventLoop();
 
@@ -235,10 +237,11 @@ static void networkEventHandler(void* arg, esp_event_base_t event_base, int32_t 
 static void onTimeSynced(struct timeval *tv)
 {
 	LOG_INFO("Time synchronized: %ld", tv->tv_sec);
-	vTaskResume(s_tasks.aggregateData);
 	if (xTimerIsTimerActive(s_timers.timeEvents) == pdFALSE)
 	{
 		timerTimeTriggersInit();
 		xTimerStart(s_timers.timeEvents, 0);
+
+		vTaskResume(s_tasks.aggregateData); // resume only once, todo: maybe create task here instead of resuming?
 	}
 }

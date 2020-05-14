@@ -18,7 +18,7 @@
 #include "app.h"
 #include "timeTriggers.h"
 
-const timeTriggersEvent_t TRIGGER_AGGREGATION_EVENT = TIME_TRIGGERS_EVENT_MINUTE_PASSED;
+const timeTriggersEvent_t TRIGGER_AGGREGATION_EVENT = TIME_TRIGGERS_EVENT_HOUR_PASSED;
 
 static void timePassedHandler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
 
@@ -53,6 +53,7 @@ void taskAggregateData(void* p)
 			xQueueReceive(reportsQueue, &trash, 0);
 		}
 
+		LOG_TASK_INFO("Queuing report %ld - %ld", report.timestampFrom, report.timestampTo);
 		FREERTOS_ERROR_CHECK(xQueueSend(reportsQueue, &report, 0));
 
 		begin = end;

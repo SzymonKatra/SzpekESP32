@@ -137,7 +137,7 @@ static esp_err_t rootGETHandler(httpd_req_t* request)
 static esp_err_t configGETHandler(httpd_req_t* request)
 {
 	httpd_resp_set_status(request, "302 Found");
-	httpd_resp_set_hdr(request, "Location", "http://szpek.local");
+	httpd_resp_set_hdr(request, "Location", "http://config.szpek.pl");
 	httpd_resp_send(request, NULL, 0);
 
 	return ESP_OK;
@@ -168,7 +168,7 @@ static esp_err_t notFoundHandler(httpd_req_t* request, httpd_err_code_t error)
 {
 	LOG_INFO("Redirecting to main page");
 	httpd_resp_set_status(request, "302 Found");
-	httpd_resp_set_hdr(request, "Location", "http://szpek.local");
+	httpd_resp_set_hdr(request, "Location", "http://config.szpek.pl");
 	httpd_resp_send(request, NULL, 0);
 
 	return ESP_OK;
