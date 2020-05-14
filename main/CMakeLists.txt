@@ -13,5 +13,6 @@ idf_component_register(SRCS "main.c"
 							"szpekApi/v1/szpekApiV1.c"
 							"configServer.c"
 							"timeTriggers.c"
+							"captdns.c"
                     INCLUDE_DIRS "."
                     )
