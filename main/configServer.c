@@ -127,6 +127,8 @@ void configServerStop()
 
 static esp_err_t rootGETHandler(httpd_req_t* request)
 {
+	// TODO: check request uri and redirect to change url in the browser
+
 	httpd_resp_send(request, INDEX_CONTENT, strlen(INDEX_CONTENT));
 
     return ESP_OK;
