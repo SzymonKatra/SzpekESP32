@@ -44,7 +44,7 @@ typedef struct
 	QueueHandle_t reportMiscQueue;
 } appITCStructures_t;
 
-//#define APP_FIRMWARE_NAME "esp32_2020-04-19"
+//#define APP_FIRMWARE_NAME "esp32_15-05-2020"
 #define APP_FIRMWARE_NAME "esp32_dev"
 
 #define APP_PMS_UART_PORT 	UART_NUM_2
