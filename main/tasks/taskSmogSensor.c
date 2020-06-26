@@ -21,7 +21,9 @@ void taskSmogSensor(void* p)
 	params.model = PMS_7003;
 	params.dataReadFun = &readFromUart;
 
+	LOG_TASK_INFO("Testing PMS7003...");
 	pmsTest(&params);
+	LOG_TASK_INFO("Testing PMS7003 finished");
 
 	while (1)
 	{
