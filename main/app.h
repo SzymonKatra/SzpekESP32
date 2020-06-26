@@ -31,6 +31,7 @@ typedef struct
 	TaskHandle_t pushReports;
 	TaskHandle_t checkButton;
 	TaskHandle_t firmwareOTA;
+	TaskHandle_t weatherSensor;
 } appTasksList_t;
 
 typedef struct
@@ -40,11 +41,11 @@ typedef struct
 
 typedef struct
 {
-	QueueHandle_t reportSmogQueue;
+	QueueHandle_t reportMeasurementsQueue;
 	QueueHandle_t reportMiscQueue;
 } appITCStructures_t;
 
-//#define APP_FIRMWARE_NAME "esp32_25-05-2020"
+//#define APP_FIRMWARE_NAME "esp32_26-06-2020"
 #define APP_FIRMWARE_NAME "esp32_dev"
 
 #define APP_PMS_UART_PORT 	UART_NUM_2
@@ -58,7 +59,8 @@ void appInit();
 
 appMode_t appGetCurrentMode();
 void appChangeMode(appMode_t appMode);
-void appTriggerFirmwareUpdateCheck();
+void appFirmwareTriggerUpdateCheck();
+void appFirmwareApply();
 
 esp_event_loop_handle_t appGetEventLoopHandle();
 const appITCStructures_t* appGetITCStructures();

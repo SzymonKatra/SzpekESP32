@@ -27,12 +27,6 @@
 static void initPeripherals();
 static void initNVS();
 
-static void testBME280();
-void user_delay_ms(uint32_t period);
-int8_t user_i2c_read(uint8_t dev_id, uint8_t reg_addr, uint8_t *reg_data, uint16_t len);
-int8_t user_i2c_write(uint8_t dev_id, uint8_t reg_addr, uint8_t *reg_data, uint16_t len);
-
-
 void app_main()
 {
 	initPeripherals();
@@ -80,8 +74,6 @@ static void initPeripherals()
 	i2c_param_config(APP_I2C_MASTER, &i2cConfig);
 	i2c_driver_install(APP_I2C_MASTER, i2cConfig.mode, 0, 0, 0);
 
-	testBME280();
-
 	gpio_config_t ledsConfig =
 	{
 		.pin_bit_mask = (1ULL << APP_LED_GREEN_GPIO) | (1ULL << APP_LED_ORANGE_GPIO) | (1ULL << APP_LED_RED_GPIO),
@@ -101,84 +93,4 @@ static void initPeripherals()
 		.intr_type = GPIO_INTR_DISABLE
 	};
 	gpio_config(&buttonsConfig);
-}
-
-
-static void testBME280()
-{
-	struct bme280_dev dev;
-
-	dev.dev_id = BME280_I2C_ADDR_PRIM;
-	dev.intf = BME280_I2C_INTF;
-	dev.read = user_i2c_read;
-	dev.write = user_i2c_write;
-	dev.delay_ms = user_delay_ms;
-
-	int8_t rslt = bme280_init(&dev);
-	ESP_LOGI("BME280 test", "bme280_init = %d", rslt);
-
-	uint8_t settings_sel;
-	struct bme280_data comp_data;
-
-	/* Recommended mode of operation: Indoor navigation */
-	dev.settings.osr_h = BME280_OVERSAMPLING_1X;
-	dev.settings.osr_p = BME280_OVERSAMPLING_16X;
-	dev.settings.osr_t = BME280_OVERSAMPLING_2X;
-	dev.settings.filter = BME280_FILTER_COEFF_16;
-	dev.settings.standby_time = BME280_STANDBY_TIME_62_5_MS;
-
-	settings_sel = BME280_OSR_PRESS_SEL;
-	settings_sel |= BME280_OSR_TEMP_SEL;
-	settings_sel |= BME280_OSR_HUM_SEL;
-	settings_sel |= BME280_STANDBY_SEL;
-	settings_sel |= BME280_FILTER_SEL;
-	rslt = bme280_set_sensor_settings(settings_sel, &dev);
-	rslt = bme280_set_sensor_mode(BME280_NORMAL_MODE, &dev);
-
-	ESP_LOGI("BME280 test", "Temperature, Pressure, Humidity");
-
-	dev.delay_ms(200); // delay to measure
-	rslt = bme280_get_sensor_data(BME280_ALL, &comp_data, &dev);
-	ESP_LOGI("BME280 test", "%d %d %d", (int)comp_data.temperature, (int)comp_data.pressure, (int)comp_data.humidity);
-}
-
-void user_delay_ms(uint32_t period)
-{
-    vTaskDelay(pdMS_TO_TICKS(period));
-}
-
-int8_t user_i2c_read(uint8_t dev_id, uint8_t reg_addr, uint8_t *reg_data, uint16_t len)
-{
-    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-
-    i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, (dev_id << 1) | I2C_MASTER_WRITE, true);
-    i2c_master_write_byte(cmd, reg_addr, true);
-
-    i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, (dev_id << 1) | I2C_MASTER_READ, true);
-    i2c_master_read(cmd, reg_data, len, I2C_MASTER_LAST_NACK);
-    i2c_master_stop(cmd);
-    esp_err_t err = i2c_master_cmd_begin(APP_I2C_MASTER, cmd, pdMS_TO_TICKS(10));
-
-    i2c_cmd_link_delete(cmd);
-
-    return err == ESP_OK ? 0 : -1;
-}
-
-int8_t user_i2c_write(uint8_t dev_id, uint8_t reg_addr, uint8_t *reg_data, uint16_t len)
-{
-    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-
-    i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, (dev_id << 1) | I2C_MASTER_WRITE, true);
-
-    i2c_master_write_byte(cmd, reg_addr, true);
-    i2c_master_write(cmd, reg_data, len, true);
-    i2c_master_stop(cmd);
-    esp_err_t err = i2c_master_cmd_begin(APP_I2C_MASTER, cmd, 0);
-
-    i2c_cmd_link_delete(cmd);
-
-    return err == ESP_OK ? 0 : -1;
 }

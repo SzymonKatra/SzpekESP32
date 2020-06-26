@@ -48,6 +48,27 @@ bool szpekApiV1ReportSmog(const szpekApiV1ReportSmog_t* report)
 	return status == 200;
 }
 
+bool szpekApiV1ReportMeasurements(const szpekApiV1ReportMeasurements_t* report)
+{
+	cJSON* root = cJSON_CreateObject();
+	cJSON_AddNumberToObject(root, "pm10Value", report->pm10Value);
+	cJSON_AddNumberToObject(root, "pm2_5Value", report->pm2_5Value);
+	cJSON_AddNumberToObject(root, "pm1Value", report->pm1Value);
+	cJSON_AddNumberToObject(root, "samplesCount", report->samplesCount);
+	cJSON_AddNumberToObject(root, "timestampFrom", report->timestampFrom);
+	cJSON_AddNumberToObject(root, "timestampTo", report->timestampTo);
+	cJSON_AddNumberToObject(root, "temperatureCelsius", report->temperatureCelsius);
+	cJSON_AddNumberToObject(root, "pressureHPa", report->pressureHPa);
+	cJSON_AddNumberToObject(root, "humidityPercent", report->humidityPercent);
+	char* jsonStr = cJSON_PrintBuffered(root, 512, false);
+	cJSON_Delete(root);
+
+	int status = performSignedPOST("/measurements", jsonStr);
+	free(jsonStr);
+
+	return status == 200;
+}
+
 bool szpekApiV1ReportStartup(const char* firmwareName)
 {
 	cJSON* root = cJSON_CreateObject();

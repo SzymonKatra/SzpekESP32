@@ -15,5 +15,6 @@
 #include "taskAggregateData.h"
 #include "taskCheckButton.h"
 #include "taskFirmwareOTA.h"
+#include "taskWeatherSensor.h"
 
 #endif /* MAIN_TASKS_TASKS_H_ */

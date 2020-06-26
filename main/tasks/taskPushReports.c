@@ -17,29 +17,29 @@
 #include "reports.h"
 #include "network.h"
 
-static void toContract(const reportSmog_t* report, szpekApiV1ReportSmog_t* contract);
-static void trySendUntilSucceeded(const szpekApiV1ReportSmog_t* contract);
+static void toContract(const reportMeasurements_t* report, szpekApiV1ReportMeasurements_t* contract);
+static void trySendUntilSucceeded(const szpekApiV1ReportMeasurements_t* contract);
 static void sendStartupReportUntilSucceded();
 
 void taskPushReports(void* p)
 {
-	QueueHandle_t reportsQueue = appGetITCStructures()->reportSmogQueue;
+	QueueHandle_t reportsQueue = appGetITCStructures()->reportMeasurementsQueue;
 
 	sendStartupReportUntilSucceded();
 
 	while (1)
 	{
-		reportSmog_t report;
+		reportMeasurements_t report;
 		if (xQueueReceive(reportsQueue, &report, portMAX_DELAY) != pdTRUE) continue;
 
-		szpekApiV1ReportSmog_t contract;
+		szpekApiV1ReportMeasurements_t contract;
 		toContract(&report, &contract);
 
 		trySendUntilSucceeded(&contract);
 	}
 }
 
-static void toContract(const reportSmog_t* report, szpekApiV1ReportSmog_t* contract)
+static void toContract(const reportMeasurements_t* report, szpekApiV1ReportMeasurements_t* contract)
 {
 	contract->pm1Value = report->pm1;
 	contract->pm2_5Value = report->pm2_5;
@@ -47,15 +47,18 @@ static void toContract(const reportSmog_t* report, szpekApiV1ReportSmog_t* contr
 	contract->samplesCount = report->samplesCount;
 	contract->timestampFrom = report->timestampFrom;
 	contract->timestampTo = report->timestampTo;
+	contract->temperatureCelsius = report->temperature;
+	contract->pressureHPa = report->pressure;
+	contract->humidityPercent = report->humidity;
 }
 
-static void trySendUntilSucceeded(const szpekApiV1ReportSmog_t* contract)
+static void trySendUntilSucceeded(const szpekApiV1ReportMeasurements_t* contract)
 {
 	bool success = false;
 	while (!success)
 	{
 		LOG_TASK_INFO("Pushing report... (%ld - %ld)", contract->timestampFrom, contract->timestampTo);
-		success = szpekApiV1ReportSmog(contract);
+		success = szpekApiV1ReportMeasurements(contract);
 		if (success)
 		{
 			LOG_TASK_INFO("Report pushed successfully (%ld - %ld)!", contract->timestampFrom, contract->timestampTo);
@@ -78,6 +81,7 @@ static void sendStartupReportUntilSucceded()
 		if (success)
 		{
 			LOG_TASK_INFO("Startup reported successfully!");
+			appFirmwareApply();
 		}
 		else
 		{

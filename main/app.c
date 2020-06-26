@@ -14,6 +14,7 @@
 #include "timers/timers.h"
 #include "reports.h"
 #include "smog.h"
+#include "weather.h"
 #include "settings.h"
 #include "crypto.h"
 #include "configServer.h"
@@ -65,13 +66,13 @@ void appInit()
 	setupTimeSync();
 	networkInit();
 	smogInit();
+	weatherInit();
 
 	createITCStructures();
 	createTimers();
 	createTasks();
 
 	appChangeMode(APP_MODE_RUNNING);
-	esp_ota_mark_app_valid_cancel_rollback();
 }
 
 appMode_t appGetCurrentMode()
@@ -112,9 +113,23 @@ void appChangeMode(appMode_t appMode)
 	}
 }
 
-void appTriggerFirmwareUpdateCheck()
+void appFirmwareTriggerUpdateCheck()
 {
 	xTaskNotifyGive(s_tasks.firmwareOTA);
+}
+
+void appFirmwareApply()
+{
+	LOG_INFO("Applying current firmware (%s) as boot firmware...", APP_FIRMWARE_NAME);
+	esp_err_t err = esp_ota_mark_app_valid_cancel_rollback();
+	if (err == ESP_OK)
+	{
+		LOG_INFO("Current firmware (%s) applied as boot firmware!", APP_FIRMWARE_NAME);
+	}
+	else
+	{
+		LOG_ERROR("An error occurred while applying current firmware (%s) as boot! Error code = %d", APP_FIRMWARE_NAME, err);
+	}
 }
 
 esp_event_loop_handle_t appGetEventLoopHandle()
@@ -162,8 +177,8 @@ static void createITCStructures()
 {
 	LOG_INFO("Creating ITC structures...");
 
-	s_itcStructures.reportSmogQueue = xQueueCreate(24, sizeof(reportSmog_t));
-	configASSERT(s_itcStructures.reportSmogQueue);
+	s_itcStructures.reportMeasurementsQueue = xQueueCreate(24, sizeof(reportMeasurements_t));
+	configASSERT(s_itcStructures.reportMeasurementsQueue);
 
 	LOG_INFO("ITC structures created successfully!");
 }
@@ -202,6 +217,9 @@ static void createTasks()
 	FREERTOS_ERROR_CHECK(xTaskCreate(taskFirmwareOTA, "FirmwareOTA", 8192, NULL, 1, &s_tasks.firmwareOTA));
 	configASSERT(s_tasks.firmwareOTA);
 
+	FREERTOS_ERROR_CHECK(xTaskCreate(taskWeatherSensor, "WeatherSensor", 2048, NULL, 7, &s_tasks.weatherSensor));
+	configASSERT(s_tasks.weatherSensor);
+
 	LOG_INFO("Tasks created successfully!");
 }
 
@@ -210,7 +228,7 @@ static void networkEventHandler(void* arg, esp_event_base_t event_base, int32_t 
 	if (event_id == NETWORK_EVENT_CONNECTION_ESTABLISHED)
 	{
 		LOG_INFO("Network connection established");
-		appTriggerFirmwareUpdateCheck();
+		appFirmwareTriggerUpdateCheck();
 		vTaskResume(s_tasks.pushReports);
 		ledNetwork(1);
 	}

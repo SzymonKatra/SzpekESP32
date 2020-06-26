@@ -35,7 +35,21 @@ typedef struct
 	time_t timestampTo;
 } szpekApiV1ReportSmog_t;
 
+typedef struct
+{
+	float pm10Value;
+	float pm2_5Value;
+	float pm1Value;
+	size_t samplesCount;
+	time_t timestampFrom;
+	time_t timestampTo;
+	double temperatureCelsius;
+	double pressureHPa;
+	double humidityPercent;
+} szpekApiV1ReportMeasurements_t;
+
 bool szpekApiV1ReportSmog(const szpekApiV1ReportSmog_t* report);
+bool szpekApiV1ReportMeasurements(const szpekApiV1ReportMeasurements_t* report);
 
 bool szpekApiV1ReportStartup(const char* firmwareName);
 

@@ -57,7 +57,7 @@ static void hourPassedHandler(void* arg, esp_event_base_t event_base, int32_t ev
 	timeTriggersEventHourData_t* hourData = (timeTriggersEventHourData_t*)event_data;
 	if (*hourData == 0)
 	{
-		appTriggerFirmwareUpdateCheck();
+		appFirmwareTriggerUpdateCheck();
 	}
 }
 

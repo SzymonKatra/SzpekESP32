@@ -19,6 +19,9 @@ typedef struct
     uint32_t samplesCount;
     time_t timestampFrom;
     time_t timestampTo;
-} reportSmog_t;
+    double temperature;
+    double pressure;
+    double humidity;
+} reportMeasurements_t;
 
 #endif /* MAIN_REPORTS_H_ */
