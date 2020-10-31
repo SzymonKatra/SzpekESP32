@@ -10,6 +10,7 @@
 
 #include <stddef.h>
 #include "network.h"
+#include <esp_log.h>
 
 typedef struct
 {
@@ -30,5 +31,7 @@ void settingsInit();
 const settingsSzpekId_t* settingsGetSzpekId();
 const settingsWifi_t* settingsGetWifi();
 void settingsSetWifi(const settingsWifi_t* wifiSettings);
+
+esp_log_level_t settingsGetRemoteLogLevel();
 
 #endif /* MAIN_SETTINGS_H_ */

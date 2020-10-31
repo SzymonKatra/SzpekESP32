@@ -52,7 +52,7 @@ void weatherUpdate(double temperature, double pressure, double humidity)
 	xSemaphoreTake(s_mutex, portMAX_DELAY);
 
 	s_temperature = temperature;
-	s_pressure = pressure;
+	s_pressure = pressure; // fix by pressure/e^((-0.0289644*9.80665*altitude)/(8.3144598*(273.15+temperature)))
 	s_humidity = humidity;
 	s_isValid = true;
 

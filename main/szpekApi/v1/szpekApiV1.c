@@ -27,6 +27,7 @@ static void createAuthHeader(const unsigned char* data, size_t length, char resu
 
 static int startSignedGET(const char* endpoint, esp_http_client_handle_t* client);
 static int performSignedPOST(const char* endpoint, const char* jsonData);
+static int performSignedPOSTWithoutLogs(const char* endpoint, const char* jsonData);
 static size_t readResponseString(esp_http_client_handle_t client, char* buffer, size_t length);
 static cJSON* readResponseJSON(esp_http_client_handle_t client);
 
@@ -89,7 +90,7 @@ bool szpekApiV1Log(const char* message)
 	char* jsonStr = cJSON_PrintUnformatted(root);
 	cJSON_Delete(root);
 
-	int status = performSignedPOST("/log", jsonStr);
+	int status = performSignedPOSTWithoutLogs("/log", jsonStr);
 	free(jsonStr);
 
 	return status == 200;
@@ -225,6 +226,30 @@ static int performSignedPOST(const char* endpoint, const char* jsonData)
 		LOG_ERROR("Failed HTTP POST to %s failed: %s", config.url, esp_err_to_name(err));
 		status = -1;
 	}
+
+	esp_http_client_cleanup(client);
+
+	return status;
+}
+
+static int performSignedPOSTWithoutLogs(const char* endpoint, const char* jsonData)
+{
+	size_t jsonDataLen = strlen(jsonData);
+
+	char url[128];
+	snprintf(url, 128, "%s%s%s", API_URL, API_PATH, endpoint);
+
+	char authHeader[128];
+	createAuthHeader((const unsigned char*)jsonData, strlen(jsonData), authHeader);
+
+	esp_http_client_config_t config = { .url = url, .method = HTTP_METHOD_POST };
+	esp_http_client_handle_t client = esp_http_client_init(&config);
+	esp_http_client_set_header(client, "Authorization", authHeader);
+	esp_http_client_set_header(client, "Content-Type", "application/json");
+	esp_http_client_set_post_field(client, jsonData, jsonDataLen);
+
+	esp_err_t err = esp_http_client_perform(client);
+	int status = err == ESP_OK ? esp_http_client_get_status_code(client) : -1;
 
 	esp_http_client_cleanup(client);
 

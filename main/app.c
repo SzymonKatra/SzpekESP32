@@ -28,6 +28,7 @@ static const char* LOG_TAG = "App";
 static esp_event_loop_handle_t s_appEventLoopHandle;
 
 static appMode_t s_appMode;
+static QueueHandle_t s_logsQueue;
 static appITCStructures_t s_itcStructures;
 static appTasksList_t s_tasks;
 static appTimersList_t s_timers;
@@ -50,6 +51,9 @@ void appInit()
 {
 	vTaskPrioritySet(NULL, APP_INIT_PRIORITY);
 	configASSERT(uxTaskPriorityGet(NULL) == APP_INIT_PRIORITY);
+
+	s_logsQueue = xQueueCreate(128, APP_REMOTE_LOG_LENGTH); // must be configured before everything
+	configASSERT(s_logsQueue);
 
 	LOG_INFO("Firmware name: %s", APP_FIRMWARE_NAME);
 
@@ -147,6 +151,11 @@ const appTasksList_t* appGetTasks()
 	return &s_tasks;
 }
 
+QueueHandle_t appGetLogsQueue()
+{
+	return s_logsQueue;
+}
+
 void appRegisterEventHandler(esp_event_base_t event_base, int32_t event_id, esp_event_handler_t event_handler, void* event_handler_arg)
 {
 	ESP_ERROR_CHECK(esp_event_handler_register_with(s_appEventLoopHandle, event_base, event_id, event_handler, event_handler_arg));
@@ -198,18 +207,18 @@ static void createTasks()
 	configASSERT(uxTaskPriorityGet(NULL) == APP_INIT_PRIORITY);
 	LOG_INFO("Creating tasks...");
 
-	FREERTOS_ERROR_CHECK(xTaskCreate(taskCheckButton, "CheckButton", 2048, NULL, 6, &s_tasks.checkButton));
+	FREERTOS_ERROR_CHECK(xTaskCreate(taskCheckButton, "CheckButton", 4096, NULL, 6, &s_tasks.checkButton));
 	configASSERT(s_tasks.checkButton);
 
-	FREERTOS_ERROR_CHECK(xTaskCreate(taskSmogSensor, "SmogSensor", 2048, NULL, 7, &s_tasks.smogSensor));
+	FREERTOS_ERROR_CHECK(xTaskCreate(taskSmogSensor, "SmogSensor", 4096, NULL, 7, &s_tasks.smogSensor));
 	configASSERT(s_tasks.smogSensor);
 
-	FREERTOS_ERROR_CHECK(xTaskCreate(taskAggregateData, "AggregateData", 2048, NULL, 5, &s_tasks.aggregateData));
+	FREERTOS_ERROR_CHECK(xTaskCreate(taskAggregateData, "AggregateData", 4096, NULL, 5, &s_tasks.aggregateData));
 	configASSERT(s_tasks.aggregateData);
 	vTaskSuspend(s_tasks.aggregateData);
 	configASSERT(eTaskGetState(s_tasks.aggregateData) == eSuspended);
 
-	FREERTOS_ERROR_CHECK(xTaskCreate(taskPushReports, "PushReports", 8192, NULL, 2, &s_tasks.pushReports));
+	FREERTOS_ERROR_CHECK(xTaskCreate(taskPushReports, "PushReports", 8192, NULL, 3, &s_tasks.pushReports));
 	configASSERT(s_tasks.pushReports);
 	vTaskSuspend(s_tasks.pushReports);
 	//configASSERT(eTaskGetState(s_tasks.pushReports) == eSuspended); // INVESTIGATE: suspended task pre-empted and not suspended??? maybe other tasks are preempting?
@@ -217,8 +226,11 @@ static void createTasks()
 	FREERTOS_ERROR_CHECK(xTaskCreate(taskFirmwareOTA, "FirmwareOTA", 8192, NULL, 1, &s_tasks.firmwareOTA));
 	configASSERT(s_tasks.firmwareOTA);
 
-	FREERTOS_ERROR_CHECK(xTaskCreate(taskWeatherSensor, "WeatherSensor", 2048, NULL, 7, &s_tasks.weatherSensor));
+	FREERTOS_ERROR_CHECK(xTaskCreate(taskWeatherSensor, "WeatherSensor", 4096, NULL, 7, &s_tasks.weatherSensor));
 	configASSERT(s_tasks.weatherSensor);
+
+	FREERTOS_ERROR_CHECK(xTaskCreate(taskLogs, "Logs", 8192, NULL, 2, &s_tasks.logs));
+	configASSERT(s_tasks.logs);
 
 	LOG_INFO("Tasks created successfully!");
 }

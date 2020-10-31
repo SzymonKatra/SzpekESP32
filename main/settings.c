@@ -77,6 +77,11 @@ void settingsSetWifi(const settingsWifi_t* wifiSettings)
 	}
 }
 
+esp_log_level_t settingsGetRemoteLogLevel()
+{
+	return ESP_LOG_WARN;
+}
+
 static void loadSzpekId()
 {
 	nvs_handle_t nvsHandle;
