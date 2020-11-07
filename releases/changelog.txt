@@ -1,2 +1,5 @@
+esp32_07-11-2020
+- Increased stack size for AppEventLoop - fixed stack overflow when pressing button
+
 esp32_31-10-2020
 - Added logging to API (verbosity == WARN)

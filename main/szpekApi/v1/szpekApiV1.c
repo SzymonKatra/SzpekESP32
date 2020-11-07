@@ -186,7 +186,14 @@ static int startSignedGET(const char* endpoint, esp_http_client_handle_t* client
 	if (err == ESP_OK)
 	{
 		status = esp_http_client_get_status_code(*client);
-		LOG_INFO("Successful HTTP GET to %s, status = %d", config.url, status);
+		if (status == 200)
+		{
+			LOG_INFO("Successful HTTP GET to %s, status = %d", config.url, status);
+		}
+		else
+		{
+			LOG_WARNING("HTTP GET to %s returned %d", config.url, status);
+		}
 	}
 	else
 	{
@@ -219,7 +226,14 @@ static int performSignedPOST(const char* endpoint, const char* jsonData)
 	if (err == ESP_OK)
 	{
 		status = esp_http_client_get_status_code(client);
-		LOG_INFO("Successful HTTP POST to %s, status = %d", config.url, status);
+		if (status == 200)
+		{
+			LOG_INFO("Successful HTTP POST to %s, status = %d", config.url, status);
+		}
+		else
+		{
+			LOG_WARNING("HTTP POST to %s returned %d", config.url, status);
+		}
 	}
 	else
 	{

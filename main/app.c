@@ -167,7 +167,7 @@ static void createAppEventLoop()
 		.queue_size = 10,
 		.task_name = "AppEventLoop",
 		.task_priority = APP_EVENT_LOOP_PRIORITY,
-		.task_stack_size = 2048,
+		.task_stack_size = 4096,
 		.task_core_id = tskNO_AFFINITY
 	};
 
