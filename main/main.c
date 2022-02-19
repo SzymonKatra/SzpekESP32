@@ -70,6 +70,7 @@ static void initPeripherals()
 	i2cConfig.sda_pullup_en = GPIO_PULLUP_ENABLE;
 	i2cConfig.scl_io_num = GPIO_NUM_22;
 	i2cConfig.scl_pullup_en = GPIO_PULLUP_ENABLE;
+    i2cConfig.clk_flags = 0;
 	i2cConfig.master.clk_speed = 100000;
 	i2c_param_config(APP_I2C_MASTER, &i2cConfig);
 	i2c_driver_install(APP_I2C_MASTER, i2cConfig.mode, 0, 0, 0);
