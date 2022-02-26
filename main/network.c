@@ -6,8 +6,6 @@
 #include "esp_system.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
-#include "lwip/err.h"
-#include "lwip/sys.h"
 #include "logUtils.h"
 #include "app.h"
 
@@ -25,6 +23,7 @@ static const char* LOG_TAG = "Network";
 static networkMode_t s_currentMode;
 static const EventBits_t NETWORK_ESTABLISHED_BIT = BIT0;
 static EventGroupHandle_t s_eventGroup;
+static esp_netif_t* s_netif;
 
 static void eventHandler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
 static void setEstablished();
@@ -35,6 +34,7 @@ void networkInit()
 	s_currentMode = NETWORK_MODE_NONE;
 
     s_eventGroup = xEventGroupCreate();
+    s_netif = NULL;
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
@@ -53,6 +53,11 @@ networkError_t networkSTAConnection(const char ssid[NETWORK_SSID_SIZE], const ch
 	s_currentMode = NETWORK_MODE_STA_CONNECTION;
 
 	ESP_ERROR_CHECK(esp_wifi_stop());
+
+	if (s_netif != NULL) {
+		esp_netif_destroy_default_wifi(s_netif);
+	}
+	esp_netif_create_default_wifi_sta();
 
 	wifi_config_t wifiCfg;
 	memset(&wifiCfg, 0, sizeof(wifi_config_t));
@@ -73,6 +78,11 @@ networkError_t networkHotspot(const char ssid[NETWORK_SSID_SIZE], const char pas
 	s_currentMode = NETWORK_MODE_HOTSPOT;
 
 	ESP_ERROR_CHECK(esp_wifi_stop());
+
+	if (s_netif != NULL) {
+		esp_netif_destroy_default_wifi(s_netif);
+	}
+	esp_netif_create_default_wifi_ap();
 
 	wifi_config_t wifiCfg;
 	memset(&wifiCfg, 0, sizeof(wifi_config_t));
@@ -108,23 +118,22 @@ static void eventHandler(void* arg, esp_event_base_t event_base, int32_t event_i
 {
 	if (event_base == WIFI_EVENT)
 	{
-		switch (event_id)
+		if (event_id == WIFI_EVENT_STA_START)
 		{
-		case WIFI_EVENT_STA_START:
 			LOG_INFO("STA started. Connecting to the AP...");
 			esp_wifi_connect();
-			break;
-
-		case WIFI_EVENT_STA_STOP:
-			 // todo: why raised when stopping AP?
+		}
+		else if (event_id == WIFI_EVENT_STA_STOP)
+		{
+			// todo: why raised when stopping AP?
 			LOG_INFO("STA stopped");
-			break;
-
-		case WIFI_EVENT_STA_CONNECTED:
+		}
+		else if (event_id == WIFI_EVENT_STA_CONNECTED)
+		{
 			LOG_INFO("Connected to the AP successfully! Waiting for an IP...");
-			break;
-
-		case WIFI_EVENT_STA_DISCONNECTED:
+		}
+		else if (event_id == WIFI_EVENT_STA_DISCONNECTED)
+		{
 			LOG_INFO("Disconnected from the AP");
 			clearEstablished();
 			if (s_currentMode == NETWORK_MODE_STA_CONNECTION)
@@ -132,25 +141,26 @@ static void eventHandler(void* arg, esp_event_base_t event_base, int32_t event_i
 				LOG_INFO("Connecting to the AP...");
 				esp_wifi_connect();
 			}
-			break;
-
-		case WIFI_EVENT_AP_START:
+		}
+		else if (event_id == WIFI_EVENT_AP_START)
+		{
 			LOG_INFO("AP started");
 			esp_event_post_to(appGetEventLoopHandle(), NETWORK_EVENT, NETWORK_EVENT_HOTSPOT_STARTED, NULL, 0, pdMS_TO_TICKS(1000));
-			break;
-
-		case WIFI_EVENT_AP_STOP:
+		}
+		else if (event_id == WIFI_EVENT_AP_STOP)
+		{
 			LOG_INFO("AP stopped");
 			esp_event_post_to(appGetEventLoopHandle(), NETWORK_EVENT, NETWORK_EVENT_HOTSPOT_STOPPED, NULL, 0, pdMS_TO_TICKS(1000));
-			break;
-
-		case WIFI_EVENT_AP_STACONNECTED:
-			LOG_INFO("Client connected to the AP");
-			break;
-
-		case WIFI_EVENT_AP_STADISCONNECTED:
-			LOG_INFO("Client disconnected from the AP");
-			break;
+		}
+		else if (event_id == WIFI_EVENT_AP_STACONNECTED)
+		{
+			wifi_event_ap_staconnected_t* event = (wifi_event_ap_staconnected_t*) event_data;
+			LOG_INFO("Client connected to the AP - MAC = "MACSTR" , AID = %d", MAC2STR(event->mac), event->aid);
+		}
+		else if (event_id == WIFI_EVENT_AP_STADISCONNECTED)
+		{
+			wifi_event_ap_stadisconnected_t* event = (wifi_event_ap_stadisconnected_t*) event_data;
+			LOG_INFO("Client disconnected from the AP - MAC = "MACSTR" , AID = %d", MAC2STR(event->mac), event->aid);
 		}
 	}
 	else if (event_base == IP_EVENT)
@@ -158,13 +168,17 @@ static void eventHandler(void* arg, esp_event_base_t event_base, int32_t event_i
 		if (event_id == IP_EVENT_STA_GOT_IP)
 		{
 			ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
-			LOG_INFO("Got IP: %s", ip4addr_ntoa(&event->ip_info.ip));
+			LOG_INFO("Got IP: "IPSTR, IP2STR(&event->ip_info.ip));
 			setEstablished();
 		}
 		else if (event_id == IP_EVENT_STA_LOST_IP)
 		{
 			LOG_INFO("Lost IP");
 			clearEstablished();
+		}
+		else if (event_id == IP_EVENT_AP_STAIPASSIGNED)
+		{
+			LOG_INFO("AP assigned IP to the client");
 		}
 	}
 }
