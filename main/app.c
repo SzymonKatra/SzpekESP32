@@ -32,10 +32,11 @@ static QueueHandle_t s_logsQueue;
 static appITCStructures_t s_itcStructures;
 static appTasksList_t s_tasks;
 static appTimersList_t s_timers;
+static bool s_ledDisabled;
 
-#define ledNetwork(value) gpio_set_level(APP_LED_GREEN_GPIO, value)
-#define ledConfig(value) gpio_set_level(APP_LED_RED_GPIO, value)
-#define ledOrange(value) gpio_set_level(APP_LED_ORANGE_GPIO, value)
+#define ledNetwork(value) gpio_set_level(APP_LED_GREEN_GPIO, s_ledDisabled ? 0 : value)
+#define ledConfig(value) gpio_set_level(APP_LED_RED_GPIO, s_ledDisabled ? 0 : value)
+#define ledOrange(value) gpio_set_level(APP_LED_ORANGE_GPIO, s_ledDisabled ? 0 : value)
 
 static void createAppEventLoop();
 static void setupTimeSync();
@@ -56,6 +57,8 @@ void appInit()
 	configASSERT(s_logsQueue);
 
 	LOG_INFO("Firmware name: %s", APP_FIRMWARE_NAME);
+
+	s_ledDisabled = false;
 
 	ledNetwork(0);
 	ledConfig(0);
@@ -271,6 +274,14 @@ static void onTimeSynced(struct timeval *tv)
 	{
 		timerTimeTriggersInit();
 		xTimerStart(s_timers.timeEvents, 0);
+
+		s_ledDisabled = settingsGetLedMode() == LED_MODE_DISABLE_AFTER_TIME_SYNC;
+		if (s_ledDisabled)
+		{
+			ledNetwork(0);
+			ledConfig(0);
+			ledOrange(0);
+		}
 
 		vTaskResume(s_tasks.aggregateData); // resume only once, todo: maybe create task here instead of resuming?
 	}

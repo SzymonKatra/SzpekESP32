@@ -26,6 +26,12 @@ typedef struct
 	char password[NETWORK_PASSWORD_SIZE];
 } settingsWifi_t;
 
+typedef enum
+{
+	LED_MODE_ALWAYS_ENABLED,
+	LED_MODE_DISABLE_AFTER_TIME_SYNC
+} settingsLedMode_t;
+
 void settingsInit();
 
 const settingsSzpekId_t* settingsGetSzpekId();
@@ -33,5 +39,6 @@ const settingsWifi_t* settingsGetWifi();
 void settingsSetWifi(const settingsWifi_t* wifiSettings);
 
 esp_log_level_t settingsGetRemoteLogLevel();
+settingsLedMode_t settingsGetLedMode();
 
 #endif /* MAIN_SETTINGS_H_ */

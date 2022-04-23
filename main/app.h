@@ -45,7 +45,7 @@ typedef struct
 	QueueHandle_t reportMeasurementsQueue;
 } appITCStructures_t;
 
-//#define APP_FIRMWARE_NAME "esp32_27-02-2022"
+//#define APP_FIRMWARE_NAME "esp32_23-04-2022"
 #define APP_FIRMWARE_NAME "esp32_dev"
 
 #define APP_PMS_UART_PORT 	UART_NUM_2

@@ -19,6 +19,7 @@ static const char* LOG_TAG = "Settings";
 static settingsSzpekId_t s_szpekId;
 static bool s_wifiValid;
 static settingsWifi_t s_wifi;
+static settingsLedMode_t s_ledMode;
 
 static void loadSzpekId();
 static void loadWifi(nvs_handle_t nvsHandle);
@@ -41,6 +42,13 @@ void settingsInit()
 	else
 	{
 		LOG_ERROR("Error (%s) opening NVS handle for settings!", esp_err_to_name(err));
+	}
+
+	s_ledMode = LED_MODE_ALWAYS_ENABLED;
+
+	if (strcmp(s_szpekId.code, "7FBCB15E") == 0 || strcmp(s_szpekId.code, "39FC7696") == 0)
+	{
+		s_ledMode = LED_MODE_DISABLE_AFTER_TIME_SYNC;
 	}
 }
 
@@ -80,6 +88,11 @@ void settingsSetWifi(const settingsWifi_t* wifiSettings)
 esp_log_level_t settingsGetRemoteLogLevel()
 {
 	return ESP_LOG_WARN;
+}
+
+settingsLedMode_t settingsGetLedMode()
+{
+	return s_ledMode;
 }
 
 static void loadSzpekId()

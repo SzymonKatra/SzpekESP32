@@ -1,3 +1,9 @@
+esp_23-04-2022
+- Disable LEDs after time sync for given sensors (7FBCB15E, 39FC7696).
+
+esp_27-02-2022
+- Built with latest ESP IDF
+
 esp32_07-11-2020
 - Increased stack size for AppEventLoop - fixed stack overflow when pressing button
 
