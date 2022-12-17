@@ -11,11 +11,8 @@ jobs:
       with:
         submodules: 'recursive'
         
-    - name: Disable binary signing in sdkconfig (CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
-      run: sed -i 's/CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES/# CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES/g' sdkconfig
-    
-    - name: Disable binary signing in sdkconfig (CONFIG_SECURE_BOOT_SIGNING_KEY)
-      run: sed -i 's/CONFIG_SECURE_BOOT_SIGNING_KEY/# CONFIG_SECURE_BOOT_SIGNING_KEY/g' sdkconfig
+    - name: Disable binary signing in sdkconfig (CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT)
+      run: sed -i 's/CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT/# CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT/g' sdkconfig
     
     - name: esp-idf build
       uses: espressif/esp-idf-ci-action@v1
