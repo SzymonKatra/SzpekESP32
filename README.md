@@ -3,16 +3,18 @@
 **[Szpek](https://www.szpek.pl) is a smog sensor farm project which monitors air pollution in the cities.**
 
 This repository contains firmware for "Szpek" sensor device.  
+It uses official [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/) framework for programming ESP32 chips, which is based on [FreeRTOS](https://www.freertos.org/).
+
 **Build status:** [![GitHub publish-workflow-status](https://github.com/SzymonKatra/SzpekESP32/actions/workflows/main.yml/badge.svg)](https://github.com/SzymonKatra/SzpekESP32/actions/workflows/main.yml)
 
+[User guide for sensor device (PL)](https://www.szpek.pl/manual)
+
+## Details
 Sensor device collects measurements and sends them to the service hosted in the cloud.  
 Repositories for backend application and Web UI interface can be found here:
 - [Backend service](https://github.com/wojciechN9/Szpek)
 - [Web UI interface](https://github.com/wojciechN9/Szpek-UI)
 
-[User guide for sensor device (PL)](https://www.szpek.pl/manual)
-
-## Details
 A sensor device was built using:
 - [ESP32-WROOM-32D](https://www.espressif.com/en/products/socs/esp32)  system-on-chip,
 - [Plantower PMS7003](https://www.plantower.com/en/products_33/76.html) module for smog measurement,
