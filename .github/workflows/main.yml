@@ -1,0 +1,21 @@
+name: Build SzpekESP32 
+on: [push]
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        submodules: 'recursive'
+        
+    - name: Disable binary signing in sdkconfig (CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT)
+      run: sed -i 's/CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT/# CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT/g' sdkconfig
+    
+    - name: esp-idf build
+      uses: espressif/esp-idf-ci-action@v1
+      with:
+        esp_idf_version: v4.4
+        target: esp32
