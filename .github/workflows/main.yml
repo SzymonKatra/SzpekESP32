@@ -1,0 +1,13 @@
+- name: Espressif IoT Development Framework (ESP-IDF)
+  # You may pin to the exact commit or the version.
+  # uses: espressif/esp-idf-ci-action@146a0d2f40db5229a19360478a38812203c00161
+  uses: espressif/esp-idf-ci-action@v1
+  with:
+    # Relative path under $GITHUB_WORKSPACE to place the repository
+    # path: # optional, default is 
+    # Version of ESP-IDF docker image to use
+    esp_idf_version: 4.4 # optional, default is latest
+    # ESP32 variant to build for
+    target: esp32 # optional, default is esp32
+    # Command to run inside the docker container (default: builds the project)
+    # command:  # optional, default is idf.py build
