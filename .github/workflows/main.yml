@@ -10,6 +10,10 @@ jobs:
       uses: actions/checkout@v2
       with:
         submodules: 'recursive'
+        
+    - name: Disable binary signingsdkconfig CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES
+      run: sed -i 's/CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES=y/#CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES=y/g' sdkconfig
+      
     - name: esp-idf build
       uses: espressif/esp-idf-ci-action@v1
       with:
