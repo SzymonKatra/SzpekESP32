@@ -1,6 +1,6 @@
 # SzpekESP32
 
-**[Szpek](https://www.szpek.pl) is a smog sensor farm project which monitors air pollution in the cities.**
+**[Szpek](https://www.szpek.pl) is a smog sensor network project which monitors air pollution in the cities.**
 
 This repository contains firmware for "Szpek" sensor device.  
 It uses official [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/) framework for programming ESP32 chips, which is based on [FreeRTOS](https://www.freertos.org/).
